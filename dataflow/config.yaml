@@ -1,0 +1,16 @@
+pubsub:
+  topics:
+    - projects/your-project-id/topics/topic1
+    - projects/your-project-id/topics/topic2
+
+sensors:
+  sensor1:
+    table: table1
+  sensor2:
+    table: table2
+
+mysql:
+  instance_connection_name: your-project:your-region:your-instance
+  user: your-username
+  password: your-password
+  database: your-database
