@@ -12,7 +12,10 @@ class Subscriber:
             project_id (str): The Google Cloud project ID.
             subscription_name (str): The name of the subscription to listen to.
         """
-        pass
+
+        self.subscriber = pubsub_v1.SubscriberClient()
+        self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
+        
 
     def subscribe(self, callback: callable):
         """
@@ -21,7 +24,9 @@ class Subscriber:
             callback (callable): A function to process incoming messages.
             The function should accept a single argument (the message).
         """
-        pass
+        streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
+        print(f"Listening for messages on {self.subscription_path}")
+        streaming_pull_future.result() 
 
     def acknowledge(self, message):
         """
@@ -29,7 +34,8 @@ class Subscriber:
         Args: 
             message: The Pub/Sub message to be acknowledged.
         """
-        pass
+        self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
+        print(f"Acknowledged message is: {message.message_id}")
 
     def pull_messages(self, max_messages: int) -> list:
         """
@@ -39,10 +45,15 @@ class Subscriber:
         Returns:
             list: A list of messages.
         """
-        pass
+        response = self.subscriber.pull(request={"subscription": self.subscription_path, "max_messages": max_messages})
+        messages = response.received_messages
+        print(f"Pulled {len(messages)} messages.")
+        return messages
 
     def close(self):
         """
         Close the subscriber client and release resources.
         """
-        pass
+        self.subscriber.close()
+        
+        print("Subscriber client closed.")
