@@ -1,0 +1,3 @@
+id,serialNumber,purchaseDate,sensorType,readingEndPoint,sensor_table
+1001,ABC123,2024-01-01,1,1,sensor_1001
+1002,XYZ789,2024-02-10,2,2,sensor_1002
