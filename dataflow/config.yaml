@@ -1,3 +1,11 @@
+gcp:
+  project: your-gcp-project-id
+  region: your-region
+  job_name: your-job-name
+  staging_location: gs://your-bucket/staging
+  temp_location: gs://your-bucket/temp
+  runner: DataflowRunner
+
 pubsub:
   topics:
     - projects/your-project-id/topics/topic1

@@ -19,6 +19,9 @@ class ConfigLoader:
     
     def get_mysql_config(self):
         return self.config['mysql']
+    
+    def get_gcp_options(self):
+        return self.config['gcp']
 
 
 class BatchMySQLWriteFn(beam.DoFn):
@@ -76,15 +79,28 @@ class BatchMySQLWriteFn(beam.DoFn):
 
 
 class DataflowPipeline:
-    def __init__(self, config_path, pipeline_options):
+    def __init__(self, config_path):
         self.config_loader = ConfigLoader(config_path)
-        self.pipeline_options = pipeline_options
+        self.gcp_options = self.config_loader.get_gcp_options()
         self.pubsub_topics = self.config_loader.get_pubsub_topics()
         self.sensor_table_mapping = self.config_loader.get_sensor_table_mapping()
         self.mysql_config = self.config_loader.get_mysql_config()
-    
+
+    def create_pipeline_options(self):
+        pipeline_options = PipelineOptions()
+        google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
+        google_cloud_options.project = self.gcp_options['project']
+        google_cloud_options.region = self.gcp_options['region']
+        google_cloud_options.job_name = self.gcp_options['job_name']
+        google_cloud_options.staging_location = self.gcp_options['staging_location']
+        google_cloud_options.temp_location = self.gcp_options['temp_location']
+        pipeline_options.view_as(SetupOptions).save_main_session = True
+        pipeline_options.view_as(GoogleCloudOptions).runner = self.gcp_options['runner']
+        return pipeline_options
+
     def run(self):
-        with beam.Pipeline(options=self.pipeline_options) as p:
+        pipeline_options = self.create_pipeline_options()
+        with beam.Pipeline(options=pipeline_options) as p:
             topic_pcollections = []
             for topic in self.pubsub_topics:
                 pcoll = (p
@@ -103,17 +119,7 @@ class DataflowPipeline:
 
 def main():
     config_path = 'config.yaml'
-    pipeline_options = PipelineOptions()
-    google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
-    google_cloud_options.project = 'your-gcp-project-id'
-    google_cloud_options.region = 'your-region'
-    google_cloud_options.job_name = 'your-job-name'
-    google_cloud_options.staging_location = 'gs://your-bucket/staging'
-    google_cloud_options.temp_location = 'gs://your-bucket/temp'
-    pipeline_options.view_as(SetupOptions).save_main_session = True
-    pipeline_options.view_as(GoogleCloudOptions).runner = 'DataflowRunner'
-
-    pipeline = DataflowPipeline(config_path, pipeline_options)
+    pipeline = DataflowPipeline(config_path)
     pipeline.run()
 
 

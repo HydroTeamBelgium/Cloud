@@ -2,4 +2,3 @@ apache-beam[gcp]
 google-cloud-sql-connector[pymysql]
 pyyaml
 pymysql
-
