@@ -28,25 +28,40 @@ class Publisher:
             return False
 
     def get_topic_id(self, topic_name: str) -> str:
-        return topic_name
+        """Gets the right topic ID asked by the user"""
+        try:
+            for topic in self.topics:
+                if topic == topic_name:
+                    return topic_name
+        except Exception as e:
+            print(f"Topic ID not found: {e}")
+    
     
     def get_topic_path(self, project_id: str, topic_name: str) -> str:
+        """Returns the full path of the topic within the project ID"""
         return self.publisher.topic_path(project_id, topic_name)
     
     def create_proto_message(self, fields) -> bytes:
         """Converts a message with multiple fields to a message of bytes"""
-        msg = str
-        #msg = message_pb2.Sensor_data(fields)
-        return msg.SerializeToString()
+        try:
+            msg = str
+            #msg = message_pb2.Sensor_data(fields)
+            return msg.SerializeToString()
+        except Exception as e:
+            print(f"Not able to convert fields to proto format (bytes): {e}")
 
     def publish_message(self, topic_path: str, message: bytes) -> None:
-        return
+        """Publishes the message to the specified topic"""
+        try:
+            # Publish the message and get a future to track the message delivery
+            future = self.publisher.publish(topic_path, message)
+            print(f"Message published to {topic_path}, message ID: {future.result()}")
+        except Exception as e:
+            print(f"Failed to publish message: {e}")
     
     def publish_message_to_cloud(self, fields) -> bool:
-        if self.try_authenticate_google_cloud("service_account_path"):
-            msg = self.create_proto_message(fields)
-            self.publish_message(self.get_topic_path, msg)
-            return True
-        else:
-            return False
+        self.try_authenticate_google_cloud("service_account_path")
+        msg = self.create_proto_message(fields)
+        self.publish_message(self.get_topic_path, msg)
+
 
