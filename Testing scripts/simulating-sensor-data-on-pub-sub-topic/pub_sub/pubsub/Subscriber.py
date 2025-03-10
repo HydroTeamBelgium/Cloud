@@ -1,5 +1,5 @@
 from google.cloud import pubsub_v1
-
+import asyncio
 class Subscriber:
     """
     A class to handle subscribing to a Pub/Sub topic and processing messages.
@@ -18,7 +18,7 @@ class Subscriber:
         self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
         
 
-    def subscribe(self, callback: callable):
+    async def subscribe(self, callback: callable):
         """
         Start listening to messages from the subscription.
         Args:
@@ -27,35 +27,42 @@ class Subscriber:
         """
         streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
         print(f"Listening for messages on {self.subscription_path}")
-        streaming_pull_future.result() 
+        """runs asynchronously and keeps receiving messages until the program ends"""
+        try:
+            await streaming_pull_future
+        except asyncio.CancelledError:
+            streaming_pull_future.cancel()
+            print(f"Stopped listening for messages on {self.subscription_path}")
 
-    def acknowledge(self, message):
+    async def acknowledge(self, message):
         """
-        Acknowledge a message after it has been processed.
+        Acknowledge a message after it has been processed asynchronously.
         Args: 
-            message: The message to be acknowledged.
+        message: The message to be acknowledged.
         """
-        self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
-        print(f"Acknowledged message is: {message.message_id}")
+    
+        await self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
+        print(f"Acknowledged message: {message.message_id}")
 
-    def pull_messages(self, max_messages: int) -> list:
+
+    async def pull_messages(self, max_messages: int) -> list:
         """
-        Pull messages from the subscription.
+        Pull messages from the subscription asynchronously.
         Args: 
             max_messages (int): The maximum number of messages to pull.
         Returns:
             list: A list of messages.
         """
-        response = self.subscriber.pull(request={"subscription": self.subscription_path, "max_messages": max_messages})
+        response = await self.subscriber.pull(request={"subscription": self.subscription_path, "max_messages": max_messages})
         messages = response.received_messages
         print(f"Pulled {len(messages)} messages.")
         return messages
 
-    def close(self):
+    async def close(self):
         """
-        Close the subscriber client and release resources.
+        Close the subscriber client and release resources asynchronously.
         """
-        self.subscriber.close()
+        await self.subscriber.close()
         
         print("Subscriber client closed.")
 
