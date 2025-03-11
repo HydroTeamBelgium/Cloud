@@ -1,92 +1,69 @@
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, GoogleCloudOptions
-import yaml
-import json
-from google.cloud.sql.connector import Connector
-import pymysql
+import logging
+from typing import Dict, List, Any, Optional
 
+from dataflow.pipelines.io.sources import Source, MultiPubSubSource
+from dataflow.pipelines.io.sinks import Sink, MySQLSink
+from dataflow.pipelines.transforms.processors import SensorDataTransform
+from dataflow.utils.config_utils import get_sensor_table_resolver
+from common.config import load_config, get_section
 
-class ConfigLoader:
-    def __init__(self, config_path):
-        with open(config_path) as f:
-            self.config = yaml.safe_load(f)
-    
-    def get_pubsub_topics(self):
-        return self.config['pubsub']['topics']
-    
-    def get_sensor_table_mapping(self):
-        return self.config['sensors']
-    
-    def get_mysql_config(self):
-        return self.config['mysql']
-    
-    def get_gcp_options(self):
-        return self.config['gcp']
-
-
-class BatchMySQLWriteFn(beam.DoFn):
-    def __init__(self, sensor_table_mapping, mysql_config, batch_size=100):
-        self.sensor_table_mapping = sensor_table_mapping
-        self.mysql_config = mysql_config
-        self.batch_size = batch_size
-
-    def start_bundle(self):
-        self.connector = Connector()
-        self.conn = self.connector.connect(
-            self.mysql_config['instance_connection_name'],
-            "pymysql",
-            user=self.mysql_config['user'],
-            password=self.mysql_config['password'],
-            db=self.mysql_config['database'],
-        )
-        self.cursor = self.conn.cursor()
-        self.buffer = []
-
-    def process(self, element):
-        self.buffer.append(element)
-        if len(self.buffer) >= self.batch_size:
-            self.flush()
-
-    def flush(self):
-        if not self.buffer:
-            return
-        table_records = {}
-        for element in self.buffer:
-            sensor_id = element.get('sensor_id')
-            if sensor_id in self.sensor_table_mapping:
-                table = self.sensor_table_mapping[sensor_id]['table']
-                table_records.setdefault(table, []).append(element)
-            else:
-                print(f"Unknown sensor_id: {sensor_id}")
-        for table, records in table_records.items():
-            if records:
-                columns = records[0].keys()
-                columns_str = ', '.join(columns)
-                placeholders = ', '.join(['%s'] * len(columns))
-                sql = f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})"
-                values = [tuple(record[col] for col in columns) for record in records]
-                try:
-                    self.cursor.executemany(sql, values)
-                    self.conn.commit()
-                except Exception as e:
-                    print(f"Error inserting into MySQL: {e}")
-        self.buffer = []
-
-    def finish_bundle(self):
-        self.flush()
-        self.cursor.close()
-        self.conn.close()
-
+logger = logging.getLogger(__name__)
 
 class DataflowPipeline:
-    def __init__(self, config_path):
-        self.config_loader = ConfigLoader(config_path)
-        self.gcp_options = self.config_loader.get_gcp_options()
-        self.pubsub_topics = self.config_loader.get_pubsub_topics()
-        self.sensor_table_mapping = self.config_loader.get_sensor_table_mapping()
-        self.mysql_config = self.config_loader.get_mysql_config()
-
-    def create_pipeline_options(self):
+    """Main pipeline orchestration class for Dataflow."""
+    
+    def __init__(self, config_path: Optional[str] = None):
+        """Initialize the pipeline.
+        
+        Args:
+            config_path: Optional path to the configuration file.
+                         If not provided, will automatically determine the appropriate config.
+        """
+        logger.info(f"Initializing pipeline with config from {'default location' if config_path is None else config_path}")
+        
+        self.config = load_config(config_path)
+        
+        self.gcp_options = get_section('gcp', config_path)
+        self.pubsub_topics = get_section('pubsub', config_path)['topics']
+        self.sensor_config = get_section('sensors', config_path)
+        self.mysql_config = get_section('mysql', config_path)
+        
+    def create_sources(self) -> List[Source]:
+        """Create source components based on configuration.
+        
+        Returns:
+            List of Source objects
+        """
+        return [MultiPubSubSource(topics=self.pubsub_topics)]
+    
+    def create_sinks(self) -> List[Sink]:
+        """Create sink components based on configuration.
+        
+        Returns:
+            List of Sink objects
+        """
+        table_resolver = get_sensor_table_resolver(self.sensor_config)
+        return [MySQLSink(
+            mysql_config=self.mysql_config,
+            table_resolver=table_resolver
+        )]
+    
+    def create_transforms(self) -> List[beam.PTransform]:
+        """Create transform components based on configuration.
+        
+        Returns:
+            List of PTransform objects
+        """
+        return [SensorDataTransform()]
+    
+    def create_pipeline_options(self) -> PipelineOptions:
+        """Create pipeline options based on configuration.
+        
+        Returns:
+            Configured PipelineOptions
+        """
         pipeline_options = PipelineOptions()
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
         google_cloud_options.project = self.gcp_options['project']
@@ -97,31 +74,28 @@ class DataflowPipeline:
         pipeline_options.view_as(SetupOptions).save_main_session = True
         pipeline_options.view_as(GoogleCloudOptions).runner = self.gcp_options['runner']
         return pipeline_options
-
+    
     def run(self):
+        """Build and run the pipeline."""
         pipeline_options = self.create_pipeline_options()
+        sources = self.create_sources()
+        transforms = self.create_transforms()
+        sinks = self.create_sinks()
+        
+        logger.info(f"Running pipeline with {len(sources)} sources, "
+                   f"{len(transforms)} transforms, and {len(sinks)} sinks")
+        
         with beam.Pipeline(options=pipeline_options) as p:
-            topic_pcollections = []
-            for topic in self.pubsub_topics:
-                pcoll = (p
-                         | f"ReadFromPubSub_{topic}" >> beam.io.ReadFromPubSub(topic=topic)
-                         )
-                topic_pcollections.append(pcoll)
-            messages = (topic_pcollections | "FlattenTopics" >> beam.Flatten())
-            parsed_messages = (messages
-                               | "Decode" >> beam.Map(lambda x: x.decode('utf-8'))
-                               | "ParseJSON" >> beam.Map(json.loads)
-                               )
-            (parsed_messages
-             | "WriteToMySQL" >> beam.ParDo(BatchMySQLWriteFn(self.sensor_table_mapping, self.mysql_config))
-             )
-
-
-def main():
-    config_path = 'config.yaml'
-    pipeline = DataflowPipeline(config_path)
-    pipeline.run()
-
-
-if __name__ == "__main__":
-    main()
+            collections = [source.read(p, f"Source_{i}") 
+                          for i, source in enumerate(sources)]
+            
+            if len(collections) > 1:
+                pcoll = (collections | "FlattenSources" >> beam.Flatten())
+            else:
+                pcoll = collections[0]
+            
+            for i, transform in enumerate(transforms):
+                pcoll = pcoll | f"Transform_{i}" >> transform
+            
+            for i, sink in enumerate(sinks):
+                sink.write(pcoll, f"Sink_{i}")

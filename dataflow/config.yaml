@@ -1,10 +1,10 @@
 gcp:
   project: your-gcp-project-id
   region: your-region
-  job_name: your-job-name
+  job_name: sensor-data-pipeline
   staging_location: gs://your-bucket/staging
   temp_location: gs://your-bucket/temp
-  runner: DataflowRunner
+  runner: DataflowRunner  
 
 pubsub:
   topics:
@@ -13,12 +13,31 @@ pubsub:
 
 sensors:
   sensor1:
-    table: table1
+    table: sensor_readings_table1
+    type: temperature
   sensor2:
-    table: table2
+    table: sensor_readings_table2
+    type: humidity
 
 mysql:
   instance_connection_name: your-project:your-region:your-instance
   user: your-username
   password: your-password
   database: your-database
+
+transforms:
+  validation:
+    required_fields:
+      - sensor_id
+      - value
+      - timestamp
+
+sinks:
+  bigquery:
+    enabled: false
+    dataset: your_dataset
+    table: your_table
+  cloud_storage:
+    enabled: false
+    bucket: your_bucket
+    path: your_path
