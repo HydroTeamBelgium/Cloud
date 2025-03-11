@@ -13,7 +13,7 @@ class Subscriber:
             subscription_name (str): The name of the subscription to listen to.
             protobuf_class : The Protobuf message class
         """
-
+        self.protobuf_class = protobuf_class
         self.subscriber = pubsub_v1.SubscriberClient()
         self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
         
