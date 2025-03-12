@@ -1,11 +1,13 @@
 from google.cloud import pubsub_v1
+import google.auth.exceptions
+import google.api_core.exceptions
 
 class Subscriber:
     """
     A class to handle subscribing to a Pub/Sub topic and processing messages.
     """
 
-    def __init__(self, project_id: str, subscription_name: str, protobuf_class):
+    def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path=None):
         """
         Initialize the Subscriber.
         Args:
@@ -14,42 +16,85 @@ class Subscriber:
             protobuf_class : The Protobuf message class
         """
         self.protobuf_class = protobuf_class
-        self.subscriber = pubsub_v1.SubscriberClient()
-        self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
+        if platform == "GCP":
+            print(f"Platform {platform} selected. Using Google Cloud Platform.")
+            try:
+                if service_account_path:
+                    self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(service_account_path)
+                else:
+                    self.subscriber = pubsub_v1.SubscriberClient()
+                
+                self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
+            
+            except google.auth.exceptions.DefaultCredentialsError: 
+                print("Error: Could not authenticate using default credentials.")
+                raise e
+            except google.api_core.exceptions.NotFound:
+                print(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}")
+            except ValueError:
+                print("Error: Invalid project ID or subscription name.")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+        else:
+
+            print(f"Platform {platform} selected. Additional platform handling can be implemented later.")
+            raise NotImplementedError("Only GCP is supported currently.")
+
         
 
     def subscribe(self, callback: callable):
         """
         Start listening to messages from the subscription.
         Args:
-            callback (callable): A function to process incoming messages.
-            The function should accept a single argument (the message).
+            callback (callable): A function to process incoming messages. The function should accept a single argument (the message).
         """
-        streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
-        print(f"Listening for messages on {self.subscription_path}")
-        streaming_pull_future.result() 
+        try:
+            streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
+            print(f"Listening for messages on {self.subscription_path}")
+            streaming_pull_future.result() 
+        except Exception as e:
+            print(f"Error during subscription: {e}")
 
-    def acknowledge(self, message):
+
+    def __acknowledge(self, message):
         """
-        Acknowledge a message after it has been processed.
-        Args: 
+        Private method to acknowledge a message after it has been processed.
+        Args:
             message: The message to be acknowledged.
         """
         self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
         print(f"Acknowledged message is: {message.message_id}")
 
-    def pull_messages(self, max_messages: int) -> list:
+
+    def receive(self, max_messages=1, timeout=60):
         """
-        Pull messages from the subscription.
-        Args: 
-            max_messages (int): The maximum number of messages to pull.
-        Returns:
-            list: A list of messages.
+        Receive messages from the subscription. Uses default value for max_messages and timeout.
+        Args:
+            max_messages (int): Maximum number of messages to pull (default 1).
+            timeout (int): Timeout in seconds (default 60).
         """
-        response = self.subscriber.pull(request={"subscription": self.subscription_path, "max_messages": max_messages})
-        messages = response.received_messages
-        print(f"Pulled {len(messages)} messages.")
-        return messages
+        try:
+            response = self.subscriber.pull(request={
+                "subscription": self.subscription_path,
+                "max_messages": max_messages
+            })
+            messages = response.received_messages
+
+            if not messages:
+                print(f"No messages received within {timeout} seconds.")
+                return [], 0
+
+            print(f"Received {len(messages)} messages.")
+            for message in messages:
+                self.__deserialize_protobuf(message.data) 
+                self.__acknowledge(message)
+
+            return messages, self.__message_size(messages)
+
+        except Exception as e:
+            print(f"Error during message pull: {e}")
+            return [], 0
+
 
     def close(self):
         """
@@ -59,10 +104,10 @@ class Subscriber:
         
         print("Subscriber client closed.")
 
-    def deserialize_protobuf(self, binary_data):
+    def __deserialize_protobuf(self, binary_data):
         """
-        Deserialize binary data into a Protobuf object.
-        Args: 
+        Private method to deserialize binary data into a Protobuf object.
+        Args:
             binary_data (bytes): The binary data to deserialize.
         Returns:
             The deserialized Protobuf object.
@@ -71,10 +116,13 @@ class Subscriber:
         protobuf_message.ParseFromString(binary_data)
         return protobuf_message
     
-    def message_size(self, messages):
-        """"
-        Calculate the size of the binary message"
-        Args : 
-            messages : Messages pulled from the subscription
-        """ 
-        print(f"Pulled {len(messages)} messages.")
+    def __message_size(self, messages):
+        """
+        Private method to calculate the size of the binary message.
+        Args:
+            messages: Messages pulled from the subscription.
+        Returns:
+            tuple: A tuple containing the message count and size.
+        """
+        total_size = sum(len(message.data) for message in messages)
+        return len(messages), total_size
