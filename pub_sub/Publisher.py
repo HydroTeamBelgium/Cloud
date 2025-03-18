@@ -1,7 +1,7 @@
 from google.cloud import pubsub_v1
 import os
 
-
+# Define Publisher class to interact with Google Cloud Pub/Sub
 class Publisher:
     def __init__(self, project_id: str) -> None:
         '''Initialize Publisher class with the project_id'''
@@ -11,7 +11,7 @@ class Publisher:
         # List topics in the project
         self.topics = list(self.publisher.list_topics(request={"project": f"projects/{project_id}"}))
 
-    def try_authenticate_google_cloud(self, service_account_path: str) -> bool:
+    def authenticate(self, service_account_path: str) -> bool:
         """Authenticates using the Service Account JSON key."""
         try:
             # Set environment variable for authentication
@@ -27,21 +27,25 @@ class Publisher:
             print(f"Error during authentication: {e}")
             return False
 
-    def get_topic_id(self, topic_name: str) -> str:
-        """Gets the right topic ID asked by the user"""
+
+    def get_allTopicInProject(self) -> list:
+        return self.topics.clone()
+
+    def _get_topic_id(self, topic_id: str) -> str:
+        """Gets the right topic ID asked by the user from the list of topics"""
         try:
             for topic in self.topics:
-                if topic == topic_name:
-                    return topic_name
+                if topic == topic_id:
+                    return topic_id
         except Exception as e:
             print(f"Topic ID not found: {e}")
     
     
-    def get_topic_path(self, project_id: str, topic_name: str) -> str:
+    def _get_topic_path(self, topic_id: str) -> str:
         """Returns the full path of the topic within the project ID"""
-        return self.publisher.topic_path(project_id, topic_name)
+        return self.publisher.topic_path(self.project_id, self._get_topic_id(topic_id))
     
-    def create_proto_message(self, fields) -> bytes:
+    def _create_proto_message(self, fields) -> bytes:
         """Converts a message with multiple fields to a message of bytes"""
         try:
             msg = str
@@ -50,7 +54,7 @@ class Publisher:
         except Exception as e:
             print(f"Not able to convert fields to proto format (bytes): {e}")
 
-    def publish_message(self, topic_path: str, message: bytes) -> None:
+    def _publish_message(self, topic_path: str, message: bytes) -> None:
         """Publishes the message to the specified topic"""
         try:
             # Publish the message and get a future to track the message delivery
@@ -59,9 +63,10 @@ class Publisher:
         except Exception as e:
             print(f"Failed to publish message: {e}")
     
-    def publish_message_to_cloud(self, fields) -> bool:
-        self.try_authenticate_google_cloud("service_account_path")
-        msg = self.create_proto_message(fields)
-        self.publish_message(self.get_topic_path, msg)
+    def publish_message_to_cloud(self, topic_id: str,  fields) -> None:
+        """Publishes a message to a topic, authenticates itself first before sending the message"""
+        self.authenticate("service_account_path")
+        msg = self._create_proto_message(fields)
+        self._publish_message(self._get_topic_path(topic_id), msg)
 
 
