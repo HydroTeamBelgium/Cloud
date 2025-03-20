@@ -4,70 +4,39 @@ from typing import List, str, Dict, Any, Optional, Tuple, Bool
 
 class Database:
     def __init__(self, host: str, user: str, password: str, database: str) -> None:
-        pass
+        """
+        Initializes the database object and creates a connection.
+        
+        host (str): Host adres of the database, found on the GCP console (go to the desired database instance)
+        user (str): the user that tries to connect to the database (in testing probably a name, 
+                    could be other instances from the car as well —> see GCP console/Database/Users)
+        password (str): user password (set in GCP, see console). Password will be hashed and hash will be used
+        database (str): the name of the MySQL database that you’re trying to connect to.
+                        See GCP console and consult your team lead for which database you should connect to
+        """
     
-    def connect(self) -> None:
+    def _connect(self) -> None:
         "Establishes a connection to the database"
         pass
     
     def disconnect(self) -> None:
-        "Closes the connection to the database"
+        "Disconnects the connection with the database"
         pass
     
-    def is_connected(sef) -> bool:
+    def is_connected(self) -> bool:
         """
         Checks wether there's a connection to the database
         returns true if connected, else false
         """  
         pass
-    
-    #CRUD instructions:
-    
-    def insert(self, table: str, data: Dict[str, Any]) -> int | None:
-        """
-        @table: str
-        @data: Dict[str, Any] -- a key and value pair of a dictionnary, corresponding to the column name of the table, and the value to be inserted in that column
         
-        outputs the id of the last inserted record in the database, or None if the insertion failed
+    def execute_query(self, query: str) -> List[Dict[str, Any]]:
         """
-        pass
-    
-    def select(self, table: str, columns: List[str] = ["*"], where: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        selects items from the database
-        arguments:
-        @table: select the required table where data should be retrieved
-        @columns: list of strings, defaults to ["*"], which means "all the records"
-        @where: where clause, defaults to None, and can be set to None as well (Optional), takes a dictionnary with a string key value (ie. the column name)
-                and a 'Any' type as the value property of the dictionnary value
-                
-        returns a list of dictionnaries with string and 'Any' key-value pair, i.e. it returns the selected values out of the database
-        """
-        pass
-    
-    def update(self, table: str, data: Dict[str, Any], where: Dict[str, Any]) -> bool:
-        """
-        Updates records in the database and returns True if successful
-        @table: table to be updated
-        @data: the new data to overwrite the old data, column-value pair in the form of a dictionnary
-        @where: where clause, column-value pair where the new data should be updated
+        Executes a raw SQL query on the connected database
         
-        outputs a boolean if at least one record in the database is updated
-        """
-        pass
-    
-    def delete(self, table: str, where: Dict[str, Any]) -> bool:
-        """
-        @table: table where a record should be deleted
-        @where: where clause where the record should be deleted (for example; {"id", 5})
-        
-        returns True if succesful
-        """
-        pass
-    
-    def execute_query(self, query: str, params: Optional[Tuple[Any, ...]] = None) -> List[Dict[str, Any]]:
-        """
-        Executes any raw SQL query
+        query (str): the raw SQL query. This query will be extracted from an SQL file.
+                     Use of ‘typed’ queries (i.e. not extracted from an SQL file) are strongly not advised.
+        params (tuple): Prevents SQL injection (see API on Notion)
         """
         pass
         
