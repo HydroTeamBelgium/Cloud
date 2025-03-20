@@ -7,7 +7,7 @@ class Subscriber:
     A class to handle subscribing to a Pub/Sub topic and processing messages.
     """
 
-    def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path=None):
+    def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path: Optional[str] = None):
         """
         Initialize the Subscriber.
         Args:
@@ -15,7 +15,10 @@ class Subscriber:
             subscription_name (str): The name of the subscription to listen to.
             protobuf_class : The Protobuf message class
         """
+        self.project_id = project_id
+        self.subscription_name = subscription_name
         self.protobuf_class = protobuf_class
+
         if platform == "GCP":
             print(f"Platform {platform} selected. Using Google Cloud Platform.")
             try:
@@ -31,10 +34,13 @@ class Subscriber:
                 raise e
             except google.api_core.exceptions.NotFound:
                 print(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}")
+                raise e
             except ValueError:
                 print("Error: Invalid project ID or subscription name.")
+                raise e
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
+                raise e
         else:
 
             print(f"Platform {platform} selected. Additional platform handling can be implemented later.")
@@ -42,7 +48,7 @@ class Subscriber:
 
         
 
-    def subscribe(self, callback: callable):
+    def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None]):
         """
         Start listening to messages from the subscription.
         Args:
@@ -54,6 +60,8 @@ class Subscriber:
             streaming_pull_future.result() 
         except Exception as e:
             print(f"Error during subscription: {e}")
+            raise e
+           
 
 
     def __acknowledge(self, message):
