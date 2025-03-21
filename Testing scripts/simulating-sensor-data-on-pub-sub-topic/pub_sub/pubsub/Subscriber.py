@@ -14,7 +14,7 @@ class Subscriber:
 
     def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path: Optional[str] = None):
         """
-         Initialize the Subscriber.
+        Initialize the Subscriber.
         Args:
             project_id (str): The Google Cloud project ID.
             subscription_name (str): The name of the subscription to listen to.
@@ -25,9 +25,10 @@ class Subscriber:
         self.project_id = project_id
         self.subscription_name = subscription_name
         self.protobuf_class = protobuf_class
+        self.logger = logging.getLogger(__name__)
 
         if platform == "GCP":
-            print(f"Platform {platform} selected. Using Google Cloud Platform.")
+            self.logger.info(f"Platform {platform} selected. Using Google Cloud Platform.") 
             try:
                 if service_account_path:
                     self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(service_account_path)
@@ -37,19 +38,19 @@ class Subscriber:
                 self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
             
             except google.auth.exceptions.DefaultCredentialsError as e:
-                print("Error: Could not authenticate using default credentials.")
+                self.logger.error("Error: Could not authenticate using default credentials.")
                 raise
             except google.api_core.exceptions.NotFound as e:
-                print(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}")
+                self.logger.error(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}") 
                 raise
             except ValueError as e:
-                print(f"Error: Invalid project ID or subscription name. {e}")
+                self.logger.error(f"Error: Invalid project ID or subscription name. {e}") 
                 raise
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
+                self.logger.error(f"An unexpected error occurred: {e}") 
                 raise
         else:
-            print(f"Platform {platform} selected. Additional platform handling can be implemented later.")
+            self.logger.info(f"Platform {platform} selected. Additional platform handling can be implemented later.")
             raise NotImplementedError("Only GCP is supported currently.")
 
         
@@ -62,13 +63,12 @@ class Subscriber:
         """
         try:
             streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
-            print(f"Listening for messages on {self.subscription_path}")
+            self.logger.info(f"Listening for messages on {self.subscription_path}")
             streaming_pull_future.result() 
         except Exception as e:
-            print(f"Error during subscription: {e}")
+            self.logger.error(f"Error during subscription: {e}") 
             raise 
-           
-
+            
 
     def __acknowledge(self, message):
         """
@@ -98,10 +98,10 @@ class Subscriber:
             messages = response.received_messages
 
             if not messages:
-                print(f"No messages received within {timeout} seconds.")
+                self.logger.info(f"No messages received within {timeout} seconds.") 
                 return [], MessageStats(0, 0)
 
-            print(f"Received {len(messages)} messages.")
+            self.logger.info(f"Received {len(messages)} messages.") 
             deserialized_messages = []
             for message in messages:
                 deserialized_message = self.__deserialize_protobuf(message.data)
@@ -111,7 +111,7 @@ class Subscriber:
             return deserialized_messages, self.__message_size(messages)
 
         except Exception as e:
-            print(f"Error during message pull: {e}")
+            self.logger.error(f"Error during message pull: {e}") 
             return [], MessageStats(0, 0)
         
 
@@ -120,8 +120,7 @@ class Subscriber:
         Close the subscriber client and release resources.
         """
         self.subscriber.close()
-        
-        print("Subscriber client closed.")
+        self.logger.info("Subscriber client closed.") 
 
     def __deserialize_protobuf(self, binary_data):
         """
@@ -149,3 +148,5 @@ class Subscriber:
         
         total_size = sum(len(message.data) for message in messages)
         return MessageStats(len(messages), total_size)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
