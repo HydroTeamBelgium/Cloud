@@ -1,6 +1,11 @@
 from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
+from typing import Optional, Callable
+from collections import namedtuple
+import logging
+
+MessageStats = namedtuple('MessageStats', ['count', 'total_size'])
 
 class Subscriber:
     """
@@ -9,11 +14,13 @@ class Subscriber:
 
     def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path: Optional[str] = None):
         """
-        Initialize the Subscriber.
+         Initialize the Subscriber.
         Args:
             project_id (str): The Google Cloud project ID.
             subscription_name (str): The name of the subscription to listen to.
-            protobuf_class : The Protobuf message class
+            protobuf_class: The Protobuf message class.
+            platform (str): The platform to use (default is "GCP").
+            service_account_path (Optional[str]): Path to the service account file (optional).
         """
         self.project_id = project_id
         self.subscription_name = subscription_name
@@ -29,20 +36,19 @@ class Subscriber:
                 
                 self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
             
-            except google.auth.exceptions.DefaultCredentialsError: 
+            except google.auth.exceptions.DefaultCredentialsError as e:
                 print("Error: Could not authenticate using default credentials.")
-                raise e
-            except google.api_core.exceptions.NotFound:
+                raise
+            except google.api_core.exceptions.NotFound as e:
                 print(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}")
-                raise e
-            except ValueError:
-                print("Error: Invalid project ID or subscription name.")
-                raise e
+                raise
+            except ValueError as e:
+                print(f"Error: Invalid project ID or subscription name. {e}")
+                raise
             except Exception as e:
                 print(f"An unexpected error occurred: {e}")
-                raise e
+                raise
         else:
-
             print(f"Platform {platform} selected. Additional platform handling can be implemented later.")
             raise NotImplementedError("Only GCP is supported currently.")
 
@@ -60,19 +66,21 @@ class Subscriber:
             streaming_pull_future.result() 
         except Exception as e:
             print(f"Error during subscription: {e}")
-            raise e
+            raise 
            
 
 
     def __acknowledge(self, message):
         """
-        Private method to acknowledge a message after it has been processed.
+        Private method to acknowledge a message after it has been processed and logs if any error is raised.
         Args:
             message: The message to be acknowledged.
         """
-        self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
-        print(f"Acknowledged message is: {message.message_id}")
-
+        try:
+            self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
+            self.logger.info(f"Acknowledged message: {message.message_id}")
+        except Exception as e:
+            self.logger.error(f"Error acknowledging message {message.message_id}: {e}")
 
     def receive(self, max_messages=1, timeout=60):
         """
@@ -84,25 +92,28 @@ class Subscriber:
         try:
             response = self.subscriber.pull(request={
                 "subscription": self.subscription_path,
-                "max_messages": max_messages
+                "max_messages": max_messages,
+                "timeout": timeout
             })
             messages = response.received_messages
 
             if not messages:
                 print(f"No messages received within {timeout} seconds.")
-                return [], 0
+                return [], MessageStats(0, 0)
 
             print(f"Received {len(messages)} messages.")
+            deserialized_messages = []
             for message in messages:
-                self.__deserialize_protobuf(message.data) 
+                deserialized_message = self.__deserialize_protobuf(message.data)
+                deserialized_messages.append(deserialized_message)
                 self.__acknowledge(message)
 
-            return messages, self.__message_size(messages)
+            return deserialized_messages, self.__message_size(messages)
 
         except Exception as e:
             print(f"Error during message pull: {e}")
-            return [], 0
-
+            return [], MessageStats(0, 0)
+        
 
     def close(self):
         """
@@ -126,11 +137,15 @@ class Subscriber:
     
     def __message_size(self, messages):
         """
-        Private method to calculate the size of the binary message.
+        Calculate the size of the binary messages.
         Args:
             messages: Messages pulled from the subscription.
         Returns:
-            tuple: A tuple containing the message count and size.
+            MessageStats: A named tuple containing the message count and total size.
         """
+        if not messages:
+            return MessageStats(0, 0)
+    
+        
         total_size = sum(len(message.data) for message in messages)
-        return len(messages), total_size
+        return MessageStats(len(messages), total_size)
