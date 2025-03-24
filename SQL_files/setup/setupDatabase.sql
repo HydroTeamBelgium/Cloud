@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS car_components (
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     parent_component INT DEFAULT NULL,
     CONSTRAINT fk_parent_component FOREIGN KEY (parent_component)
-    REFERENCES car_components(id) ON DELETE SET NULL ON UPDATE CASCADE
+    REFERENCES car_components(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS drivers (
@@ -62,18 +62,9 @@ CREATE TABLE IF NOT EXISTS sensor_type (
     sample_freq INT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS reading_end_point (
+CREATE TABLE IF NOT EXISTS dummy_sensor_data (
     id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    functional_group ENUM('engine', 'tire', 'exhaust', 'cockpit', 'aero') NOT NULL,
-    car_component INT NOT NULL,
-    CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component)
-    REFERENCES car_components(id) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS sensor_data (
-    id INT PRIMARY KEY,
-    value BIGINT NOT NULL,
+    value BIGINT NOT NULL, -- This is specific for the sensor type, could also be 3 fields (e.g. 'x-axis', 'y-axis', 'z-axis')
     timestamp DATETIME(9) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     sensor_entity INT NOT NULL,
     event INT NOT NULL,
@@ -93,4 +84,13 @@ CREATE TABLE IF NOT EXISTS sensor_entity (
     REFERENCES sensor_type(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_sensor_reading_end_point FOREIGN KEY (reading_end_point)
     REFERENCES reading_end_point(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reading_end_point (
+    id INT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    functional_group ENUM('engine', 'tire', 'exhaust', 'cockpit', 'aero') NOT NULL,
+    car_component INT NOT NULL,
+    CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component)
+    REFERENCES car_components(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
