@@ -24,7 +24,7 @@ class Subscriber:
         """
         pass
 
-    def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None])-> None:
+    def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None]):
         """
         Start listening to messages from the subscription.
         Args:
@@ -32,7 +32,7 @@ class Subscriber:
         """
         pass
 
-    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message)-> None:
+    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message):
         """
         Private method to acknowledge a message after it has been processed and logs if any error is raised.
         Args:
@@ -40,7 +40,7 @@ class Subscriber:
         """
         pass
 
-    def receive(self, max_messages: int = 1, timeout: float = 60) -> List[Any]:
+    def receive(self, max_messages: int = 1, timeout: float = 60):
         """
         Receive messages from the subscription. Uses default value for max_messages and timeout.
         Args:
@@ -55,7 +55,7 @@ class Subscriber:
         """
         pass
 
-    def __deserialize_protobuf(self, binary_data: bytes)-> Any:
+    def __deserialize_protobuf(self, binary_data: bytes):
         """
         Private method to deserialize binary data into a Protobuf object.
         Args:
@@ -65,7 +65,7 @@ class Subscriber:
         """
         pass
     
-    def __message_size(self, messages: List[pubsub_v1.subscriber.message.ReceivedMessage])  -> MessageStats:
+    def __message_size(self, messages: Tuple):
         """
         Calculate the size of the binary messages.
         Args:
