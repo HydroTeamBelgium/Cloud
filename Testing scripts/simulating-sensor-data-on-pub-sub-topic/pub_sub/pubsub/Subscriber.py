@@ -1,7 +1,7 @@
 from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
-from typing import Optional, Callable
+from typing import Optional, Callable, Type, List, Tuple, Any
 from collections import namedtuple
 from common.logger import get_logger, set_console_log_level  
 
@@ -24,7 +24,7 @@ class Subscriber:
         """
         pass
 
-    def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None]):
+    def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None])-> None:
         """
         Start listening to messages from the subscription.
         Args:
@@ -32,7 +32,7 @@ class Subscriber:
         """
         pass
 
-    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message):
+    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message)-> None:
         """
         Private method to acknowledge a message after it has been processed and logs if any error is raised.
         Args:
@@ -40,7 +40,7 @@ class Subscriber:
         """
         pass
 
-    def receive(self, max_messages: int = 1, timeout: float = 60):
+    def receive(self, max_messages: int = 1, timeout: float = 60) -> List[Any]:
         """
         Receive messages from the subscription. Uses default value for max_messages and timeout.
         Args:
@@ -49,13 +49,13 @@ class Subscriber:
         """
         pass
 
-    def close(self):
+    def close(self)-> None:
         """
         Close the subscriber client and release resources.
         """
         pass
 
-    def __deserialize_protobuf(self, binary_data: bytes):
+    def __deserialize_protobuf(self, binary_data: bytes)-> Any:
         """
         Private method to deserialize binary data into a Protobuf object.
         Args:
@@ -65,7 +65,7 @@ class Subscriber:
         """
         pass
     
-    def __message_size(self, messages):
+    def __message_size(self, messages: List[pubsub_v1.subscriber.message.ReceivedMessage])  -> MessageStats:
         """
         Calculate the size of the binary messages.
         Args:
