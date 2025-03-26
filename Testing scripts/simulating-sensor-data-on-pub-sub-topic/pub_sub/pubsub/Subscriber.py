@@ -12,13 +12,13 @@ class Subscriber:
     A class to handle subscribing to a Pub/Sub topic and processing messages.
     """
 
-    def __init__(self, project_id: str, subscription_name: str, protobuf_class, platform: str = "GCP", service_account_path: Optional[str] = None):
+    def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type, platform: str = "GCP", service_account_path: Optional[str] = None):
         """
         Initialize the Subscriber.
         Args:
             project_id (str): The Google Cloud project ID.
             subscription_name (str): The name of the subscription to listen to.
-            protobuf_class: The Protobuf message class for deserialization.
+            protobuf_class (Type): The Protobuf message class for deserialization.
             platform (str): The platform to use (default is "GCP").
             service_account_path (Optional[str]): Path to the service account file (optional).
         """
@@ -32,7 +32,7 @@ class Subscriber:
         """
         pass
 
-    def __acknowledge(self, message):
+    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message):
         """
         Private method to acknowledge a message after it has been processed and logs if any error is raised.
         Args:
@@ -40,12 +40,12 @@ class Subscriber:
         """
         pass
 
-    def receive(self, max_messages=1, timeout=60):
+    def receive(self, max_messages: int = 1, timeout: float = 60):
         """
         Receive messages from the subscription. Uses default value for max_messages and timeout.
         Args:
             max_messages (int): Maximum number of messages to pull (default 1).
-            timeout (int): Timeout in seconds (default 60).
+            timeout (float): Timeout in seconds (default 60).
         """
         pass
 
@@ -55,7 +55,7 @@ class Subscriber:
         """
         pass
 
-    def __deserialize_protobuf(self, binary_data):
+    def __deserialize_protobuf(self, binary_data: bytes):
         """
         Private method to deserialize binary data into a Protobuf object.
         Args:
