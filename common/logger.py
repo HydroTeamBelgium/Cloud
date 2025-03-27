@@ -63,24 +63,20 @@ class LoggerFactory(metaclass=SingletonMeta):
         
         Only runs configuration if handlers haven't been set up yet, preventing duplicate handlers.
         """
-        # Remove existing handlers to prevent duplicates
         for handler in list(self.root_logger.handlers):
             self.root_logger.removeHandler(handler)
             
         self.root_logger.setLevel(logging.DEBUG)
         
-        # Read environment variables for log levels
         console_log_level = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
         file_log_level = os.environ.get('FILE_LOG_LEVEL', 'DEBUG').upper()
         
-        # Set up console handler
         self.console_handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.console_handler.setFormatter(formatter)
         self._set_handler_level(self.console_handler, console_log_level)
         self.root_logger.addHandler(self.console_handler)
         
-        # Set up file handler if LOG_FILE is set
         log_file = os.environ.get('LOG_FILE')
         if log_file:
             self.file_handler = logging.FileHandler(log_file)
@@ -124,11 +120,9 @@ class LoggerFactory(metaclass=SingletonMeta):
         logger = logging.getLogger(name)
         
         if log_file:
-            # Clear any existing handlers to avoid duplication
             for handler in list(logger.handlers):
                 logger.removeHandler(handler)
                 
-            # Add file handler
             file_handler = logging.FileHandler(log_file)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             file_handler.setFormatter(formatter)
@@ -137,10 +131,8 @@ class LoggerFactory(metaclass=SingletonMeta):
             self._set_handler_level(file_handler, file_log_level)
             logger.addHandler(file_handler)
             
-            # Prevent propagation to root logger to avoid duplicate logging
             logger.propagate = False
             
-            # Add console handler to ensure output still goes to console
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setFormatter(formatter)
             console_log_level = os.environ.get('CONSOLE_LOG_LEVEL', 'INFO').upper()
@@ -161,7 +153,6 @@ class LoggerFactory(metaclass=SingletonMeta):
         if self.console_handler:
             self._set_handler_level(self.console_handler, level.upper())
             
-        # Also update any console handlers attached to individual loggers
         for name in logging.root.manager.loggerDict:
             logger = logging.getLogger(name)
             for handler in logger.handlers:
@@ -180,7 +171,6 @@ class LoggerFactory(metaclass=SingletonMeta):
         if self.file_handler:
             self._set_handler_level(self.file_handler, level.upper())
             
-        # Also update any file handlers attached to individual loggers
         for name in logging.root.manager.loggerDict:
             logger = logging.getLogger(name)
             for handler in logger.handlers:
