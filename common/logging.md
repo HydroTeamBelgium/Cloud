@@ -40,7 +40,7 @@ To start using the logging module in your code, follow these steps:
 
 3. **Log Messages**
 
-   Use the logger’s methods to log messages at different levels:
+   Use the logger's methods to log messages at different levels:
 
    ```python
    logger.debug("This is a debug message")
@@ -50,7 +50,7 @@ To start using the logging module in your code, follow these steps:
    logger.critical("Critical failure, shutting down")
    ```
 
-The module automatically configures the root logger when imported, so you don’t need to call `setup_logging()` yourself—it’s handled for you.
+The module automatically configures the root logger when imported, so you don't need to call `setup_logging()` yourself—it's handled for you.
 
 ---
 
@@ -60,11 +60,27 @@ The module supports these standard log levels:
 
 - **`DEBUG`**: Detailed information for debugging (e.g., variable values or step-by-step execution).
 - **`INFO`**: General updates to confirm things are working (e.g., "Server started").
-- **`WARNING`**: Minor issues that don’t stop the program (e.g., "Configuration file not found, using defaults").
+- **`WARNING`**: Minor issues that don't stop the program (e.g., "Configuration file not found, using defaults").
 - **`ERROR`**: Serious problems that affect functionality (e.g., "Database connection failed").
 - **`CRITICAL`**: Severe errors that may crash the program (e.g., "Out of memory, terminating").
 
-Choose the right level based on the message’s purpose and severity.
+Choose the right level based on the message's purpose and severity.
+
+## Message Levels vs. LOG_LEVEL Environment Variable
+
+1. **Message Levels**: When you write code like `logger.debug()` or `logger.info()`, you're assigning a severity level to that specific message.
+
+2. **LOG_LEVEL Environment Variable**: This sets a threshold that determines which messages actually appear in the console. Only messages with a level equal to or higher than this threshold will be displayed.
+
+Think of it like a filter:
+- Your code contains messages at various levels (DEBUG, INFO, WARNING, etc.)
+- The LOG_LEVEL environment variable determines which of these messages are actually shown
+
+### Why Change LOG_LEVEL?
+
+- **Development**: Set LOG_LEVEL=DEBUG to see all messages, including detailed debugging information
+- **Production**: Set LOG_LEVEL=INFO or WARNING to reduce log volume and focus on important events
+- **Troubleshooting**: Temporarily change LOG_LEVEL to DEBUG when investigating an issue, then switch back
 
 ---
 
@@ -79,7 +95,7 @@ Choose the right level based on the message’s purpose and severity.
   LOG_LEVEL=DEBUG python your_app.py
   ```
 
-  Valid values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. If `LOG_LEVEL` isn’t set or is invalid, it defaults to `INFO`.
+  Valid values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. If `LOG_LEVEL` isn't set or is invalid, it defaults to `INFO`.
 
 ### File Logging
 
@@ -89,7 +105,7 @@ Choose the right level based on the message’s purpose and severity.
   LOG_FILE=/var/log/myapp.log python your_app.py
   ```
 
-- **Behavior**: All messages (`DEBUG` and above) are written to the file, regardless of the console level, in addition to console output.
+- **Behavior**: All messages (`DEBUG` and above) are written to the file, regardless of the LOG_LEVEL environment variable setting for console output. This means your file will contain the complete log record while your console shows only the filtered view based on LOG_LEVEL.
 
 ### Runtime Changes
 
@@ -109,7 +125,7 @@ Choose the right level based on the message’s purpose and severity.
 
 ### Example 1: Basic Logging in a Module
 
-Imagine you’re writing a module `data_processor.py`:
+Imagine you're writing a module `data_processor.py`:
 
 ```python
 from common.logger import get_logger
@@ -178,7 +194,7 @@ from common.logger import get_logger, set_console_log_level
 
 logger = get_logger(__name__)
 
-logger.debug("This won’t show yet")
+logger.debug("This won't show yet")
 logger.info("App starting")
 set_console_log_level('DEBUG')
 logger.debug("Now this will show")
