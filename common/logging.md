@@ -8,11 +8,12 @@ This guide explains how to use the custom logging module implemented in our clou
 
 The logging module sets up a shared logging configuration for the entire project. Here's what it offers:
 
-- **Console Logging**: Logs are sent to the console (stdout) with a default level of `INFO`. You can adjust this level using the `LOG_LEVEL` environment variable.
-- **File Logging**: Optionally logs to a file if you specify a file path with the `LOG_FILE` environment variable.
+- **Console Logging**: Logs are sent to the console (stdout) with a default level of `INFO`. You can adjust this level using the `CONSOLE_LOG_LEVEL` environment variable.
+- **File Logging**: Optionally logs to a file if you specify a file path with the `LOG_FILE` environment variable. Default level is `DEBUG`, configurable with `FILE_LOG_LEVEL`.
 - **Log Levels**: Supports standard log levels: `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
-- **Dynamic Control**: Allows changing the console log level at runtime with the `set_console_log_level` function.
+- **Dynamic Control**: Allows changing log levels at runtime with the `set_console_log_level` and `set_file_log_level` functions.
 - **Consistent Formatting**: Uses a standard format for all log messages: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`.
+- **Module-Specific File Logging**: Option to create separate log files for specific modules.
 
 This setup ensures we all use consistent logging, making it easier to monitor and debug the project.
 
@@ -36,6 +37,12 @@ To start using the logging module in your code, follow these steps:
 
    ```python
    logger = get_logger(__name__)
+   ```
+
+   Optionally, you can specify a dedicated log file for this logger:
+
+   ```python
+   logger = get_logger(__name__, log_file="my_module.log")
    ```
 
 3. **Log Messages**
@@ -66,21 +73,23 @@ The module supports these standard log levels:
 
 Choose the right level based on the message's purpose and severity.
 
-## Message Levels vs. LOG_LEVEL Environment Variable
+## Message Levels vs. Environment Variables
 
 1. **Message Levels**: When you write code like `logger.debug()` or `logger.info()`, you're assigning a severity level to that specific message.
 
-2. **LOG_LEVEL Environment Variable**: This sets a threshold that determines which messages actually appear in the console. Only messages with a level equal to or higher than this threshold will be displayed.
+2. **Environment Variables**: Two separate environment variables control logging thresholds:
+   - `CONSOLE_LOG_LEVEL`: Determines which messages appear in the console
+   - `FILE_LOG_LEVEL`: Determines which messages are written to log files
 
-Think of it like a filter:
+Think of these as filters:
 - Your code contains messages at various levels (DEBUG, INFO, WARNING, etc.)
-- The LOG_LEVEL environment variable determines which of these messages are actually shown
+- The environment variables determine which of these messages are actually shown or saved
 
-### Why Change LOG_LEVEL?
+### Why Change Log Levels?
 
-- **Development**: Set LOG_LEVEL=DEBUG to see all messages, including detailed debugging information
-- **Production**: Set LOG_LEVEL=INFO or WARNING to reduce log volume and focus on important events
-- **Troubleshooting**: Temporarily change LOG_LEVEL to DEBUG when investigating an issue, then switch back
+- **Development**: Set CONSOLE_LOG_LEVEL=DEBUG to see all messages during development
+- **Production**: Set CONSOLE_LOG_LEVEL=INFO or WARNING to reduce console output in production
+- **Troubleshooting**: Set FILE_LOG_LEVEL=DEBUG to capture detailed logs for later analysis
 
 ---
 
@@ -89,13 +98,13 @@ Think of it like a filter:
 ### Console Logging
 
 - **Default Behavior**: Logs `INFO` and above to the console.
-- **Adjusting the Level**: Set the `LOG_LEVEL` environment variable when running your application:
+- **Adjusting the Level**: Set the `CONSOLE_LOG_LEVEL` environment variable when running your application:
 
   ```bash
-  LOG_LEVEL=DEBUG python your_app.py
+  CONSOLE_LOG_LEVEL=DEBUG python your_app.py
   ```
 
-  Valid values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. If `LOG_LEVEL` isn't set or is invalid, it defaults to `INFO`.
+  Valid values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. If `CONSOLE_LOG_LEVEL` isn't set or is invalid, it defaults to `INFO`.
 
 ### File Logging
 
@@ -105,19 +114,43 @@ Think of it like a filter:
   LOG_FILE=/var/log/myapp.log python your_app.py
   ```
 
-- **Behavior**: All messages (`DEBUG` and above) are written to the file, regardless of the LOG_LEVEL environment variable setting for console output. This means your file will contain the complete log record while your console shows only the filtered view based on LOG_LEVEL.
+- **Adjust File Log Level**: Set the `FILE_LOG_LEVEL` environment variable:
+
+  ```bash
+  FILE_LOG_LEVEL=INFO LOG_FILE=/var/log/myapp.log python your_app.py
+  ```
+
+- **Default Behavior**: By default, file logging captures `DEBUG` and above levels, regardless of the console log level setting.
+
+### Module-Specific File Logging
+
+You can create a dedicated log file for a specific module by passing the `log_file` parameter:
+
+```python
+logger = get_logger(__name__, log_file="my_module.log")
+```
+
+This creates a separate log file that only contains logs from this specific logger, while still maintaining console output.
 
 ### Runtime Changes
 
 - **Change Console Level Dynamically**: Use `set_console_log_level` to adjust the console log level during execution:
 
   ```python
-  from common.logger import set_console_log_level
+  from common.logger import LoggerFactory
 
-  set_console_log_level('DEBUG')  # Now console shows DEBUG and above
+  LoggerFactory.set_console_log_level('DEBUG')  # Now console shows DEBUG and above
   ```
 
-  Valid levels are the same as above. If an invalid level is provided, it prints an error message and leaves the level unchanged.
+- **Change File Level Dynamically**: Similarly, use `set_file_log_level` to adjust file logging verbosity:
+
+  ```python
+  from common.logger import LoggerFactory
+
+  LoggerFactory.set_file_log_level('INFO')  # Now log files only record INFO and above
+  ```
+
+  Valid levels are the same as above. If an invalid level is provided, it defaults to INFO and prints a warning.
 
 ---
 
@@ -160,7 +193,7 @@ Output (default `INFO` level):
 Run with debug logs:
 
 ```bash
-LOG_LEVEL=DEBUG python data_processor.py
+CONSOLE_LOG_LEVEL=DEBUG python data_processor.py
 ```
 
 Output:
@@ -178,32 +211,52 @@ Run the same script with file logging:
 LOG_FILE=app.log python data_processor.py
 ```
 
-Console output remains `INFO` and above, but `app.log` contains:
+Console output remains `INFO` and above, but `app.log` contains all messages by default:
 ```
 2023-10-10 10:00:00,000 - data_processor - INFO - Starting data processing
 2023-10-10 10:00:00,001 - data_processor - DEBUG - Processed result: 5.0
 2023-10-10 10:00:00,002 - data_processor - INFO - Data processing complete
 ```
 
-### Example 3: Dynamic Log Level Change
-
-Adjust the console level mid-execution:
+### Example 3: Module-Specific File Logging
 
 ```python
-from common.logger import get_logger, set_console_log_level
+from common.logger import get_logger
+
+# Create a logger with its own log file
+logger = get_logger(__name__, log_file="my_module.log")
+
+logger.debug("This debug message goes to my_module.log")
+logger.info("This info message goes to both console and my_module.log")
+```
+
+### Example 4: Dynamic Log Level Change
+
+Adjust log levels mid-execution:
+
+```python
+from common.logger import get_logger, LoggerFactory
 
 logger = get_logger(__name__)
 
-logger.debug("This won't show yet")
+logger.debug("This won't show in console by default")
 logger.info("App starting")
-set_console_log_level('DEBUG')
-logger.debug("Now this will show")
+
+# Change console log level
+LoggerFactory.set_console_log_level('DEBUG')
+logger.debug("Now this will show in console")
+
+# If file logging is enabled, adjust its level too
+LoggerFactory.set_file_log_level('WARNING')
+logger.info("This won't be logged to file anymore")
+logger.warning("But this warning will be logged to file")
 ```
 
 Output:
 ```
 2023-10-10 10:00:00,000 - __main__ - INFO - App starting
-2023-10-10 10:00:00,001 - __main__ - DEBUG - Now this will show
+2023-10-10 10:00:00,001 - __main__ - DEBUG - Now this will show in console
+2023-10-10 10:00:00,002 - __main__ - WARNING - But this warning will be logged to file
 ```
 
 ---
