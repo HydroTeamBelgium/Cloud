@@ -37,7 +37,8 @@ jobs:
     - name: Test with pytest
       run: |
         export PYTHONPATH=$PYTHONPATH:$PWD
-        pytest || EXIT_CODE=$?
+        pytest
+        EXIT_CODE=$?
         if [ "$EXIT_CODE" -eq 5 ]; then
           echo "No tests were collected. Continuing the build."
           exit 0
