@@ -7,7 +7,8 @@ from unittest.mock import patch
 import pytest
 from io import StringIO
 
-from common.logger import get_logger, LoggerFactory, SingletonMeta
+from common.logger import LoggerFactory
+from common.LoggerSingleton import SingletonMeta
 
 class TestLogger(unittest.TestCase):
     
@@ -29,13 +30,14 @@ class TestLogger(unittest.TestCase):
     
     def test_singleton_pattern(self):
         """Test that LoggerFactory follows the singleton pattern"""
-        instance1 = LoggerFactory
-        instance2 = LoggerFactory
+        instance1 = LoggerFactory()
+        instance2 = LoggerFactory()
         self.assertIs(instance1, instance2)
     
     def test_get_logger_basic(self):
         """Test that get_logger returns a properly configured logger"""
-        logger = get_logger("test_logger")
+        logger_factory = LoggerFactory()
+        logger = logger_factory.get_logger("test_logger")
         self.assertEqual(logger.name, "test_logger")
         
         self.assertGreaterEqual(len(logging.getLogger().handlers), 1)
@@ -52,9 +54,10 @@ class TestLogger(unittest.TestCase):
          
         SingletonMeta._instances.clear()
         
-        LoggerFactory.set_console_log_level("WARNING")
+        logger_factory = LoggerFactory()
+        logger_factory.set_console_log_level("WARNING")
         
-        logger = get_logger("test_logger")
+        logger = logger_factory.get_logger("test_logger")
         
         console_handler = None
         for handler in logging.getLogger().handlers:
@@ -70,9 +73,10 @@ class TestLogger(unittest.TestCase):
          
         SingletonMeta._instances.clear()
         
-        LoggerFactory.set_console_log_level("INVALID_LEVEL")
+        logger_factory = LoggerFactory()
+        logger_factory.set_console_log_level("INVALID_LEVEL")
         
-        logger = get_logger("test_logger")
+        logger = logger_factory.get_logger("test_logger")
         
         console_handler = None
         for handler in logging.getLogger().handlers:
@@ -90,9 +94,10 @@ class TestLogger(unittest.TestCase):
             
             SingletonMeta._instances.clear()
             
-            logger = get_logger("test_logger")
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_logger")
             
-            logger = get_logger("test_logger", log_file=temp_file.name)
+            logger = logger_factory.get_logger("test_logger", log_file=temp_file.name)
             
             has_file_handler = False
             for handler in logger.handlers:
@@ -110,7 +115,8 @@ class TestLogger(unittest.TestCase):
 
             SingletonMeta._instances.clear()
             
-            logger = get_logger("test_logger", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_logger", log_file=temp_file.name)
             
             file_handler = None
             for handler in logger.handlers:
@@ -124,7 +130,8 @@ class TestLogger(unittest.TestCase):
     def test_specific_file_logger(self):
         """Test creating a logger with a specific log file parameter"""
         with tempfile.NamedTemporaryFile(suffix='.log') as temp_file:
-            logger = get_logger("test_specific_logger", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_specific_logger", log_file=temp_file.name)
             
             has_file_handler = False
             for handler in logger.handlers:
@@ -146,16 +153,18 @@ class TestLogger(unittest.TestCase):
     def test_same_file_handler_not_duplicated(self):
         """Test that calling get_logger with the same file doesn't create duplicate handlers"""
         with tempfile.NamedTemporaryFile(suffix='.log') as temp_file:
-            logger = get_logger("test_duplicate", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_duplicate", log_file=temp_file.name)
             initial_handler_count = len(logger.handlers)
             
-            logger = get_logger("test_duplicate", log_file=temp_file.name)
+            logger = logger_factory.get_logger("test_duplicate", log_file=temp_file.name)
             
             self.assertEqual(len(logger.handlers), initial_handler_count)
     
     def test_dynamic_console_log_level_change(self):
         """Test changing console log level dynamically"""
-        logger = get_logger("test_dynamic")
+        logger_factory = LoggerFactory()
+        logger = logger_factory.get_logger("test_dynamic")
         
         console_handler = None
         for handler in logging.getLogger().handlers:
@@ -165,17 +174,18 @@ class TestLogger(unittest.TestCase):
         
         initial_level = console_handler.level
         
-        LoggerFactory.set_console_log_level("DEBUG")
+        logger_factory.set_console_log_level("DEBUG")
         
         self.assertEqual(console_handler.level, logging.DEBUG)
         
-        LoggerFactory.set_console_log_level("INFO")
+        logger_factory.set_console_log_level("INFO")
         self.assertEqual(console_handler.level, logging.INFO)
     
     def test_dynamic_file_log_level_change(self):
         """Test changing file log level dynamically"""
         with tempfile.NamedTemporaryFile(suffix='.log') as temp_file:
-            logger = get_logger("test_dynamic_file", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_dynamic_file", log_file=temp_file.name)
             
             file_handler = None
             for handler in logger.handlers:
@@ -191,7 +201,8 @@ class TestLogger(unittest.TestCase):
     def test_log_message_formatting(self):
         """Test that log messages are properly formatted"""
         with tempfile.NamedTemporaryFile(suffix='.log') as temp_file:
-            logger = get_logger("test_format", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_format", log_file=temp_file.name)
             
             test_message = "Test log message"
             logger.info(test_message)
@@ -212,7 +223,8 @@ class TestLogger(unittest.TestCase):
              
             SingletonMeta._instances.clear()
             
-            logger = get_logger("test_console", log_file=temp_file.name)
+            logger_factory = LoggerFactory()
+            logger = logger_factory.get_logger("test_console", log_file=temp_file.name)
             
             test_message = "Test console message"
             logger.debug(test_message)
