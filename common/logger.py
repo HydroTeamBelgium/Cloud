@@ -157,21 +157,3 @@ class LoggerFactory(metaclass=SingletonMeta):
             for handler in logger.handlers:
                 if isinstance(handler, logging.FileHandler):
                     self._set_handler_level(handler, level.upper())
-
-
-LoggerFactory = LoggerFactory()
-
-def get_logger(name: str, log_file: Optional[str] = None) -> logging.Logger:
-    """
-    External function to get a configured logger instance.
-    
-    Args:
-        name: Logger name, typically __name__ for module-specific logging
-        log_file: Optional path to a dedicated log file for this logger
-    
-    Returns:
-        A configured logging.Logger instance from the LoggerFactory
-    
-    This is the main entry point for getting loggers in the application.
-    """
-    return LoggerFactory.get_logger(name, log_file)

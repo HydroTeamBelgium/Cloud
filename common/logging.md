@@ -23,26 +23,28 @@ This setup ensures we all use consistent logging, making it easier to monitor an
 
 To start using the logging module in your code, follow these steps:
 
-1. **Import the `get_logger` Function**
+1. **Import the `LoggerFactory` Class**
 
-   Import `get_logger` from the module to create a logger instance:
+   Import `LoggerFactory` from the module to create a logger instance:
 
    ```python
-   from common.logger import get_logger
+   from common.logger import LoggerFactory
    ```
 
-2. **Create a Logger Instance**
+2. **Create a LoggerFactory Instance and Get a Logger**
 
-   Use `get_logger` with `__name__` to get a logger named after your module. This helps identify where log messages come from:
+   Initialize the factory and use it to get a logger named after your module:
 
    ```python
-   logger = get_logger(__name__)
+   logger_factory = LoggerFactory()
+   logger = logger_factory.get_logger(__name__)
    ```
 
    Optionally, you can specify a dedicated log file for this logger:
 
    ```python
-   logger = get_logger(__name__, log_file="my_module.log")
+   logger_factory = LoggerFactory()
+   logger = logger_factory.get_logger(__name__, log_file="my_module.log")
    ```
 
 3. **Log Messages**
@@ -57,7 +59,7 @@ To start using the logging module in your code, follow these steps:
    logger.critical("Critical failure, shutting down")
    ```
 
-The module automatically configures the root logger when imported, so you don't need to call `setup_logging()` yourself—it's handled for you.
+The module automatically configures the root logger when a LoggerFactory instance is created, so you don't need to call any additional setup methods.
 
 ---
 
@@ -127,7 +129,9 @@ Think of these as filters:
 You can create a dedicated log file for a specific module by passing the `log_file` parameter:
 
 ```python
-logger = get_logger(__name__, log_file="my_module.log")
+from common.logger import LoggerFactory
+logger_factory = LoggerFactory()
+logger = logger_factory.get_logger(__name__, log_file="my_module.log")
 ```
 
 This creates a separate log file that only contains logs from this specific logger, while still maintaining console output.
@@ -138,16 +142,20 @@ This creates a separate log file that only contains logs from this specific logg
 
   ```python
   from common.logger import LoggerFactory
-
-  LoggerFactory.set_console_log_level('DEBUG')  # Now console shows DEBUG and above
+  logger_factory = LoggerFactory()
+  
+  # Later in code:
+  logger_factory.set_console_log_level('DEBUG')  # Now console shows DEBUG and above
   ```
 
 - **Change File Level Dynamically**: Similarly, use `set_file_log_level` to adjust file logging verbosity:
 
   ```python
   from common.logger import LoggerFactory
-
-  LoggerFactory.set_file_log_level('INFO')  # Now log files only record INFO and above
+  logger_factory = LoggerFactory()
+  
+  # Later in code:
+  logger_factory.set_file_log_level('INFO')  # Now log files only record INFO and above
   ```
 
   Valid levels are the same as above. If an invalid level is provided, it defaults to INFO and prints a warning.
@@ -161,9 +169,10 @@ This creates a separate log file that only contains logs from this specific logg
 Imagine you're writing a module `data_processor.py`:
 
 ```python
-from common.logger import get_logger
+from common.logger import LoggerFactory
 
-logger = get_logger(__name__)
+logger_factory = LoggerFactory()
+logger = logger_factory.get_logger(__name__)
 
 def process_data(data):
     logger.info("Starting data processing")
@@ -221,10 +230,11 @@ Console output remains `INFO` and above, but `app.log` contains all messages by 
 ### Example 3: Module-Specific File Logging
 
 ```python
-from common.logger import get_logger
+from common.logger import LoggerFactory
 
 # Create a logger with its own log file
-logger = get_logger(__name__, log_file="my_module.log")
+logger_factory = LoggerFactory()
+logger = logger_factory.get_logger(__name__, log_file="my_module.log")
 
 logger.debug("This debug message goes to my_module.log")
 logger.info("This info message goes to both console and my_module.log")
@@ -235,19 +245,20 @@ logger.info("This info message goes to both console and my_module.log")
 Adjust log levels mid-execution:
 
 ```python
-from common.logger import get_logger, LoggerFactory
+from common.logger import LoggerFactory
 
-logger = get_logger(__name__)
+logger_factory = LoggerFactory()
+logger = logger_factory.get_logger(__name__)
 
 logger.debug("This won't show in console by default")
 logger.info("App starting")
 
 # Change console log level
-LoggerFactory.set_console_log_level('DEBUG')
+logger_factory.set_console_log_level('DEBUG')
 logger.debug("Now this will show in console")
 
 # If file logging is enabled, adjust its level too
-LoggerFactory.set_file_log_level('WARNING')
+logger_factory.set_file_log_level('WARNING')
 logger.info("This won't be logged to file anymore")
 logger.warning("But this warning will be logged to file")
 ```
