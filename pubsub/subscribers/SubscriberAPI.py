@@ -10,6 +10,8 @@ from common.logger import get_logger, set_console_log_level
 class Subscriber:
     """
     A class to handle subscribing to a Pub/Sub topic and processing messages.
+
+    API Details on Notion : https://www.notion.so/subscriber-API-1a0ed9807d588058a01ecb3d2fec8802?pvs=4
     """
 
     def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type, platform: str = "GCP", service_account_path: Optional[str] = None):
