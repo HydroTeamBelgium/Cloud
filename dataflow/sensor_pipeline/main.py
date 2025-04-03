@@ -17,10 +17,8 @@ def main():
     try:
         initializer = PipelineInitializer()
         
-        args = initializer.parse_arguments()
-        
         logger.info("Initializing pipeline environment...")
-        config = initializer.initialize_pipeline_environment(args)
+        config = initializer.initialize_pipeline_environment()
         
         logger.info("Creating pipeline with configuration...")
         pipeline = SensorDataPipeline(config=config)
