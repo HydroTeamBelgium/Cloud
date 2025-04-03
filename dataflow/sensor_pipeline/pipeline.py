@@ -1,6 +1,5 @@
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, GoogleCloudOptions
-import logging
 from typing import Dict, List, Any, Optional, Union
 
 from dataflow.pipelines.io import (
@@ -10,7 +9,12 @@ from dataflow.pipelines.io import (
 from dataflow.pipelines.transforms import SensorDataProcessingTransform
 from typing import Type
 
-logger = logging.getLogger(__name__)
+# Import logger from common module
+from common.logger import LoggerFactory
+
+# Initialize logger
+logger_factory = LoggerFactory()
+logger = logger_factory.get_logger(__name__, log_file="sensor_pipeline.log")
 
 class SensorDataPipeline:
     """Main pipeline orchestration class for racing car telemetry Dataflow processing.
@@ -20,14 +24,13 @@ class SensorDataPipeline:
     in various output destinations.
     """
     
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Dict[str, Any]):
         """Initialize the racing car telemetry pipeline.
         
         Args:
             config: Configuration dictionary with pipeline settings.
-                   If not provided, will attempt to load from a default location.
         """
-        self.config = config or self._load_default_config()
+        self.config = config
         
         self.project_id = self.config.get('project_id')
         self.region = self.config.get('region', 'us-central1')
@@ -54,39 +57,6 @@ class SensorDataPipeline:
         self.sources = []
         self.transforms = []
         self.sinks = []
-    
-    def _load_default_config(self) -> Dict[str, Any]:
-        """Load configuration from default location.
-        
-        Returns:
-            Dict containing configuration parameters.
-        """
-        # This would normally load from a configuration file or service
-        # For now, return a minimal default configuration
-        return {
-            'project_id': 'my-racing-telemetry-project',
-            'region': 'us-central1',
-            'job_name': 'racing-car-telemetry',
-            'pubsub': {
-                'topics': ['projects/my-project/topics/sensor-data'],
-                'subscriptions': []
-            },
-            'sql': {
-                'connection_url': 'jdbc:mysql://localhost:3306/telemetry',
-                'driver_class_name': 'com.mysql.jdbc.Driver',
-                'username': 'user',
-                'password': 'password'
-            },
-            'sensors': {
-                'high_frequency': ['sensor1', 'sensor2'],
-                'medium_frequency': ['sensor3', 'sensor4'],
-                'low_frequency': ['sensor5']
-            },
-            'validation': {
-                'min_value': -100,
-                'max_value': 1000
-            }
-        }
     
     def create_sources(self) -> List[BaseSource]:
         """Create and configure data sources based on configuration.
