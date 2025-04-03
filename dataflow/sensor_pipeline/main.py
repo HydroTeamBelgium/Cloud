@@ -1,8 +1,5 @@
 import sys
-from .init import (
-    initialize_pipeline_environment, 
-    parse_arguments
-)
+from .init import PipelineInitializer
 from .pipeline import SensorDataPipeline
 from common.logger import LoggerFactory
 
@@ -18,10 +15,12 @@ def main():
     logger = logger_factory.get_logger(__name__)
     
     try:
-        args = parse_arguments()
+        initializer = PipelineInitializer()
+        
+        args = initializer.parse_arguments()
         
         logger.info("Initializing pipeline environment...")
-        config = initialize_pipeline_environment(args)
+        config = initializer.initialize_pipeline_environment(args)
         
         logger.info("Creating pipeline with configuration...")
         pipeline = SensorDataPipeline(config=config)

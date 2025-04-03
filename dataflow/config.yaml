@@ -1,15 +1,15 @@
 gcp:
-  project: your-gcp-project-id
-  region: your-region
+  project: gcp-project-id
+  region: region
   job_name: sensor-data-pipeline
-  staging_location: gs://your-bucket/staging
-  temp_location: gs://your-bucket/temp
+  staging_location: gs:// bucket/staging
+  temp_location: gs:// bucket/temp
   runner: DataflowRunner  
 
 pubsub:
   topics:
-    - projects/your-project-id/topics/topic1
-    - projects/your-project-id/topics/topic2
+    - projects/project-id/topics/topic1
+    - projects/project-id/topics/topic2
 
 sensors:
   sensor1:
@@ -19,11 +19,14 @@ sensors:
     table: sensor_readings_table2
     type: humidity
 
-mysql:
-  instance_connection_name: your-project:your-region:your-instance
-  user: your-username
-  password: your-password
-  database: your-database
+sql:
+  instance_connection_name: project:region:instance
+  project: gcp-project-id
+  region: region
+  instance: instance
+  user: username
+  password: password
+  database: database
 
 transforms:
   validation:
@@ -35,9 +38,9 @@ transforms:
 sinks:
   bigquery:
     enabled: false
-    dataset: your_dataset
-    table: your_table
+    dataset: dataset
+    table: table
   cloud_storage:
     enabled: false
-    bucket: your_bucket
-    path: your_path
+    bucket: bucket
+    path: path
