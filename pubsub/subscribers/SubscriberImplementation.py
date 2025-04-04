@@ -2,19 +2,43 @@ from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
 from typing import Optional, Callable
-from collections import namedtuple
 from common.logger import get_logger, set_console_log_level  
 from typing import Tuple, Type
+from common.config import get_section
+from google.protobuf.message import Message
 
-MessageStats = namedtuple('MessageStats', ['count', 'total_size'])
+pubsub_config = get_section("pubsub")
+subscriber_timeout = pubsub_config["subscriber"]["timeout"]
 
+
+
+from dataclasses import dataclass  
+
+@dataclass
+class MessageStats:
+    count: int
+    total_size: int
 
 class Subscriber:
+    """
+    A class to handle subscribing to a Pub/Sub topic and processing messages.
 
-    default_timeout = 60
+    API Details on Notion : https://www.notion.so/subscriber-API-1a0ed9807d588058a01ecb3d2fec8802?pvs=4
+    """
 
-    def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type, platform: str = "GCP", service_account_path: Optional[str] = None):
+    default_timeout = subscriber_timeout
 
+    def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type[Message], platform: str = "GCP", service_account_path: Optional[str] = None):
+
+        """
+        Initialize the Subscriber.
+        Args:
+            project_id (str): The Google Cloud project ID.
+            subscription_name (str): The name of the subscription to listen to.
+            protobuf_class (Type[Message]): The Protobuf message class for deserialization.
+            platform (str): The platform to use (default is "GCP").
+            service_account_path (Optional[str]): Path to the service account file (optional).
+        """     
         self.project_id = project_id
         self.subscription_name = subscription_name
         self.protobuf_class = protobuf_class
@@ -48,6 +72,13 @@ class Subscriber:
 
 
     def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None]):
+       
+        """
+        Start listening to messages from the subscription.
+        Args:
+            callback (callable): A function to process incoming messages. The function should accept a single argument (the message).
+        """
+
         try:
             streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
             self.logger.info(f"Listening for messages on {self.subscription_path}")
@@ -57,7 +88,14 @@ class Subscriber:
             raise 
 
 
-    def __acknowledge(self,  message: pubsub_v1.subscriber.message.Message):
+    def _acknowledge(self,  message: pubsub_v1.subscriber.message.Message):
+        
+        """
+        Private method to acknowledge a message after it has been processed and logs if any error is raised.
+        Args:
+            message: The message to be acknowledged.
+        """
+        
         try:
             self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
             self.logger.info(f"Acknowledged message: {message.message_id}")
@@ -66,6 +104,14 @@ class Subscriber:
 
 
     def receive(self, max_messages: int = 1, timeout: float = default_timeout):
+        
+        """
+        Receive messages from the subscription. Uses default value for max_messages and timeout.
+        Args:
+            max_messages (int): Maximum number of messages to pull (default 1).
+            timeout (float): Timeout in seconds (default 60).
+        """
+        
         try:
             response = self.subscriber.pull(request={
                 "subscription": self.subscription_path,
@@ -76,8 +122,8 @@ class Subscriber:
 
             if not messages:
                 self.logger.info(f"No messages received within {timeout} seconds.") 
-                return [], MessageStats(0, 0)
-
+                return [], MessageStats(count=0, total_size=0)
+            
             self.logger.info(f"Received {len(messages)} messages.") 
             deserialized_messages = []
             for message in messages:
@@ -89,24 +135,47 @@ class Subscriber:
 
         except Exception as e:
             self.logger.error(f"Error during message pull: {e}") 
-            return [], MessageStats(0, 0)
+            return [], MessageStats(count=0, total_size=0)
 
 
     def close(self):
+        
+        """
+        Close the subscriber client and release resources.
+        """        
+
         self.subscriber.close()
         self.logger.info("Subscriber client closed.")
 
 
     def __deserialize_protobuf(self, binary_data: bytes):
+       
+        """
+        Private method to deserialize binary data into a Protobuf object.
+        Args:
+            binary_data (bytes): The binary data to deserialize.
+        Returns:
+            The deserialized Protobuf object.
+        """       
+       
         protobuf_message = self.protobuf_class()
         protobuf_message.ParseFromString(binary_data)
         return protobuf_message
     
 
     def __message_size(self, messages: Tuple):
+        
+        """
+        Calculate the size of the binary messages.
+        Args:
+            messages: Messages pulled from the subscription.
+        Returns:
+            MessageStats: A named tuple containing the message count and total size.
+        """        
+        
         if not messages:
             return MessageStats(0, 0)
     
         total_size = sum(len(message.data) for message in messages)
-        return MessageStats(len(messages), total_size)
+        return MessageStats(count=len(messages), total_size=total_size)
     

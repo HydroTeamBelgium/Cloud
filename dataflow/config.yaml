@@ -7,6 +7,8 @@ gcp:
   runner: DataflowRunner
 
 pubsub:
+  subscriber:
+    timeout: 60
   topics:
     - projects/your-project-id/topics/topic1
     - projects/your-project-id/topics/topic2
