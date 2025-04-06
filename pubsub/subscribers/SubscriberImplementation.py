@@ -2,7 +2,7 @@ from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
 from typing import Optional, Callable
-from common.logger import get_logger, set_console_log_level  
+from common.logger import LoggerFactory
 from typing import Tuple, Type
 from common.config import get_section
 from google.protobuf.message import Message
@@ -28,6 +28,13 @@ class Subscriber:
 
     default_timeout = subscriber_timeout
 
+    _project_id: str
+    _subscription_name: str
+    _protobuf_class: Type[Message]
+    _logger: logging.Logger
+    _subscriber: pubsub_v1.SubscriberClient
+    _subscription_path: str
+
     def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type[Message], platform: str = "GCP", service_account_path: Optional[str] = None):
 
         """
@@ -37,15 +44,18 @@ class Subscriber:
             subscription_name (str): The name of the subscription to listen to.
             protobuf_class (Type[Message]): The Protobuf message class for deserialization.
             platform (str): The platform to use (default is "GCP").
-            service_account_path (Optional[str]): Path to the service account file (optional).
+            service_account_path (Optional[str]): Path to a service account key file.
+            If provided, this will be used for authentication (usually for local development).
+            If not provided, the client will use Application Default Credentials.
         """     
-        self.project_id = project_id
-        self.subscription_name = subscription_name
-        self.protobuf_class = protobuf_class
-        self.logger = get_logger(__name__)  
+
+        self._project_id = project_id
+        self._subscription_name = subscription_name
+        self._protobuf_class = protobuf_class
+        self._logger = LoggerFactory().get_logger(__name__)
 
         if platform == "GCP":
-            self.logger.info(f"Platform {platform} selected. Using Google Cloud Platform.") 
+            self._logger.info(f"Platform {platform} selected. Using Google Cloud Platform.")
             try:
                 if service_account_path:
                     self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(service_account_path)
@@ -55,19 +65,20 @@ class Subscriber:
                 self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
             
             except google.auth.exceptions.DefaultCredentialsError as e:
-                self.logger.error("Error: Could not authenticate using default credentials.")
+                self._logger.error("Authentication failed using Application Default Credentials." "No service account file was used.")
+                # Uses Google's Application Default Credentials automatically provided by the environment (e.g. gcloud login ) when no service account is provided.
                 raise
             except google.api_core.exceptions.NotFound as e:
-                self.logger.error(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}") 
+                self._logger.error(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}") 
                 raise
             except ValueError as e:
-                self.logger.error(f"Error: Invalid project ID or subscription name. {e}") 
+                self._logger.error(f"Error: Invalid project ID or subscription name. {e}") 
                 raise
             except Exception as e:
-                self.logger.error(f"An unexpected error occurred: {e}") 
+                self._logger.error(f"An unexpected error occurred: {e}") 
                 raise
         else:
-            self.logger.info(f"Platform {platform} selected. Additional platform handling can be implemented later.")
+            self._logger.error(f"Unsupported platform: {platform}. Additional platform handling not implemented.")   
             raise NotImplementedError("Only GCP is supported currently.")
 
 
@@ -81,10 +92,10 @@ class Subscriber:
 
         try:
             streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
-            self.logger.info(f"Listening for messages on {self.subscription_path}")
+            self._logger.info(f"Listening for messages on {self.subscription_path}")
             streaming_pull_future.result() 
         except Exception as e:
-            self.logger.error(f"Error during subscription: {e}") 
+            self._logger.error(f"Error during subscription: {e}") 
             raise 
 
 
@@ -98,9 +109,9 @@ class Subscriber:
         
         try:
             self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
-            self.logger.info(f"Acknowledged message: {message.message_id}")
+            self._logger.info(f"Acknowledged message: {message.message_id}")
         except Exception as e:
-            self.logger.error(f"Error acknowledging message {message.message_id}: {e}")
+            self._logger.error(f"Error acknowledging message {message.message_id}: {e}")
 
 
     def receive(self, max_messages: int = 1, timeout: float = default_timeout):
@@ -113,7 +124,7 @@ class Subscriber:
         """
         
         try:
-            response = self.subscriber.pull(request={
+            response = self._subscriber.pull(request={
                 "subscription": self.subscription_path,
                 "max_messages": max_messages,
                 "timeout": timeout
@@ -121,20 +132,20 @@ class Subscriber:
             messages = response.received_messages
 
             if not messages:
-                self.logger.info(f"No messages received within {timeout} seconds.") 
+                self._logger.info(f"No messages received within {timeout} seconds.") 
                 return [], MessageStats(count=0, total_size=0)
             
-            self.logger.info(f"Received {len(messages)} messages.") 
+            self._logger.info(f"Received {len(messages)} messages.") 
             deserialized_messages = []
             for message in messages:
                 deserialized_message = self.__deserialize_protobuf(message.data)
                 deserialized_messages.append(deserialized_message)
-                self.__acknowledge(message)
+                self._acknowledge(message)
 
             return deserialized_messages, self.__message_size(messages)
 
         except Exception as e:
-            self.logger.error(f"Error during message pull: {e}") 
+            self._logger.error(f"Error during message pull: {e}") 
             return [], MessageStats(count=0, total_size=0)
 
 
@@ -145,7 +156,7 @@ class Subscriber:
         """        
 
         self.subscriber.close()
-        self.logger.info("Subscriber client closed.")
+        self._logger.info("Subscriber client closed.")
 
 
     def __deserialize_protobuf(self, binary_data: bytes):
