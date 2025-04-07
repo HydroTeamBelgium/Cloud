@@ -1,0 +1,6 @@
+id,serialNumber,purchaseDate,sensorType,readingEndPoint,sensor_table
+1,SNR-2001,2023-05-22,4,5,sensor_1
+2,SNR-2002,2015-05-12,5,5,sensor_2
+3,SNR-2003,2018-06-23,3,1,sensor_3
+4,SNR-2004,2020-07-06,5,3,sensor_4
+5,SNR-2005,2023-06-10,5,2,sensor_5
