@@ -6,12 +6,17 @@ from db import fetch_sensors_from_db
 from exceptions import CSVNotCreatedError
 import logging
 
-logger = logging.getLogger(__name__)
+from models.user import User
+from models.car_component import CarComponent
+from models.reading_end_point import ReadingEndPoint
+from models.sensor_entity import SensorEntity
+from models.sensor_data import SensorData
 
+logger = logging.getLogger(__name__)
 
 def generate_project_specific_csv_files(csv_dir):
     """
-    Generates CSV files for project-specific tables.
+    Generates CSV files for project-specific tables using model classes.
 
     These tables include users, car components, reading end points, and sensor entities.
     Also generates synthetic sensor_<id>.csv files using randomized data.
@@ -20,75 +25,70 @@ def generate_project_specific_csv_files(csv_dir):
         CSVNotCreatedError: if any expected CSV file is not created or is empty.
     """
     try:
-        logger.info("📦 Generating users.csv")
-        df_users = pd.DataFrame([
-            {"id": i, "username": f"driver{i}", "email": f"driver{i}@example.com", "admin": 0, 
-             "password": "hashed_pw", "activeSession": random.choice([0, 1])}
+        logger.info("Generating users.csv")
+        users = [
+            User(i, f"driver{i}", f"driver{i}@example.com", 0, "hashed_pw", random.choice([0, 1]))
             for i in range(1, 11)
-        ])
+        ]
+        df_users = pd.DataFrame([user.to_dict() for user in users])
         users_csv = os.path.join(csv_dir, "users.csv")
         df_users.to_csv(users_csv, index=False)
         if not os.path.exists(users_csv) or os.path.getsize(users_csv) == 0:
             raise CSVNotCreatedError("users.csv not created or is empty")
 
-        logger.info("📦 Generating car_components.csv")
-        df_car_components = pd.DataFrame([
-            {
-                "id": i,
-                "semanticType": f"Component {i}",
-                "manufacturer": f"Manufacturer {i}",
-                "serialNumber": f"SN-{1000+i}",
-                "parentComponent": random.choice(range(1, i)) if i > 1 and random.random() > 0.3 else None
-            }
+        logger.info("Generating car_components.csv")
+        components = [
+            CarComponent(i, f"Component {i}", f"Manufacturer {i}", f"SN-{1000+i}",
+                         random.choice(range(1, i)) if i > 1 and random.random() > 0.3 else None)
             for i in range(1, 11)
-        ])
+        ]
+        df_components = pd.DataFrame([c.to_dict() for c in components])
         components_csv = os.path.join(csv_dir, "car_components.csv")
-        df_car_components.to_csv(components_csv, index=False)
+        df_components.to_csv(components_csv, index=False)
         if not os.path.exists(components_csv) or os.path.getsize(components_csv) == 0:
             raise CSVNotCreatedError("car_components.csv not created or is empty")
 
-        logger.info("📦 Generating reading_end_point.csv")
-        df_reading_end_point = pd.DataFrame([
-            {"id": i, "name": f"Endpoint {i}", "functionalGroup": f"Group {i}", "carComponent": random.randint(1, 10)}
+        logger.info("Generating reading_end_point.csv")
+        endpoints = [
+            ReadingEndPoint(i, f"Endpoint {i}", f"Group {i}", random.randint(1, 10))
             for i in range(1, 6)
-        ])
-        reading_csv = os.path.join(csv_dir, "reading_end_point.csv")
-        df_reading_end_point.to_csv(reading_csv, index=False)
-        if not os.path.exists(reading_csv) or os.path.getsize(reading_csv) == 0:
+        ]
+        df_endpoints = pd.DataFrame([ep.to_dict() for ep in endpoints])
+        endpoints_csv = os.path.join(csv_dir, "reading_end_point.csv")
+        df_endpoints.to_csv(endpoints_csv, index=False)
+        if not os.path.exists(endpoints_csv) or os.path.getsize(endpoints_csv) == 0:
             raise CSVNotCreatedError("reading_end_point.csv not created or is empty")
 
-        logger.info("📦 Generating sensor_entity.csv")
-        df_sensor_entity = pd.DataFrame([
-            {"id": i, "serialNumber": f"SNR-{2000+i}",
-             "purchaseDate": f"{random.randint(2015, 2023)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
-             "sensorType": random.randint(1, 5), "readingEndPoint": random.randint(1, 5), "sensor_table": f"sensor_{i}"}
+        logger.info("Generating sensor_entity.csv")
+        sensors = [
+            SensorEntity(i, f"SNR-{2000+i}",
+                         f"{random.randint(2015, 2023)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
+                         random.randint(1, 5), random.randint(1, 5), f"sensor_{i}")
             for i in range(1, 6)
-        ])
+        ]
+        df_sensors = pd.DataFrame([s.to_dict() for s in sensors])
         sensors_csv = os.path.join(csv_dir, "sensor_entity.csv")
-        df_sensor_entity.to_csv(sensors_csv, index=False)
+        df_sensors.to_csv(sensors_csv, index=False)
         if not os.path.exists(sensors_csv) or os.path.getsize(sensors_csv) == 0:
             raise CSVNotCreatedError("sensor_entity.csv not created or is empty")
 
-        logger.info("📡 Generating sensor_<id>.csv files")
-        sensors = fetch_sensors_from_db()
-        
-        # Load events from previously generated events.csv
+        logger.info("Generating sensor_<id>.csv files")
+        sensors_from_db = fetch_sensors_from_db()
+
         events_csv = os.path.join(csv_dir, "events.csv")
         if not os.path.exists(events_csv):
             raise CSVNotCreatedError("events.csv not found. Generate it first with generate_events_data().")
         df_events = pd.read_csv(events_csv)
 
-        for sensor in sensors:
+        for sensor in sensors_from_db:
             sensor_data = []
             for event in df_events.to_dict(orient='records'):
                 for _ in range(random.randint(10, 20)):
                     timestamp = datetime.strptime(event["date"], "%Y-%m-%d") + timedelta(minutes=random.randint(1, 120))
-                    sensor_data.append({
-                        "sensor_id": sensor["id"],
-                        "value": round(random.uniform(0.5, 100.0), 2),
-                        "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                        "event_id": event["round"]
-                    })
+                    data = SensorData(sensor["id"], round(random.uniform(0.5, 100.0), 2),
+                                      timestamp.strftime("%Y-%m-%d %H:%M:%S"), event["round"])
+                    sensor_data.append(data.to_dict())
+
             df_sensor_data = pd.DataFrame(sensor_data)
             sensor_csv_path = os.path.join(csv_dir, f"{sensor['sensor_table']}.csv")
             df_sensor_data.to_csv(sensor_csv_path, index=False)
@@ -98,9 +98,6 @@ def generate_project_specific_csv_files(csv_dir):
 
         logger.info("✅ All project-specific CSV files successfully created.")
 
-    except Exception as e:
+    except CSVNotCreatedError as e:
         logger.error(f"❌ Error generating project-specific CSV files: {e}")
         raise
-
-
-
