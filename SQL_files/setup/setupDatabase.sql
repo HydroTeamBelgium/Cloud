@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS events (
     end_date DATETIME NOT NULL,
     location VARCHAR(255) NOT NULL,
     track VARCHAR(255) NOT NULL,
-    surface_condition ENUM('dry', 'wet') NOT NULL,
     static BOOLEAN DEFAULT FALSE,
     driver INT NOT NULL,
     CONSTRAINT fk_event_type FOREIGN KEY (eventType)
