@@ -1,6 +1,7 @@
-CREATE TABLE IF NOT EXISTS dummy_sensor_data (
+CREATE TABLE IF NOT EXISTS {sensor_data_table} (
     id INT PRIMARY KEY,
-    value BIGINT NOT NULL, -- This is specific for the sensor type, could also be 3 fields (e.g. 'x-axis', 'y-axis', 'z-axis')
+    value BIGINT NOT NULL, -- only works for specific types of sensors
+    -- TODO create other templates for other sensors
     timestamp DATETIME(9) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     sensor_entity INT NOT NULL,
     event INT NOT NULL,
