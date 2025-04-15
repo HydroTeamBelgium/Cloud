@@ -6,6 +6,10 @@ from common.logger import LoggerFactory
 from typing import Tuple, Type
 from common.config import get_section
 from google.protobuf.message import Message
+from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable, InvalidArgument
+import numpy as np
+
+
 
 pubsub_config = get_section("pubsub")
 subscriber_timeout = pubsub_config["subscriber"]["timeout"]
@@ -42,7 +46,7 @@ class Subscriber:
         Args:
             project_id (str): The Google Cloud project ID.
             subscription_name (str): The name of the subscription to listen to.
-            protobuf_class (Type[Message]): The Protobuf message class for deserialization.
+            protobuf_class (Type[Message]): The Protobuf message class used to deserialize incoming messages.
             platform (str): The platform to use (default is "GCP").
             service_account_path (Optional[str]): Path to a service account key file.
             If provided, this will be used for authentication (usually for local development).
@@ -133,20 +137,28 @@ class Subscriber:
 
             if not messages:
                 self._logger.info(f"No messages received within {timeout} seconds.") 
-                return [], MessageStats(count=0, total_size=0)
+                return np.empty(0, dtype=object), MessageStats(count=0, total_size=0)
             
-            self._logger.info(f"Received {len(messages)} messages.") 
-            deserialized_messages = []
-            for message in messages:
-                deserialized_message = self.__deserialize_protobuf(message.data)
-                deserialized_messages.append(deserialized_message)
+        
+            deserialized_messages = np.empty(len(messages), dtype=object)
+
+            for i, message in enumerate(messages):
+                deserialized_message = self._deserialize_protobuf(message.data)
+                deserialized_messages[i] = deserialized_message
                 self._acknowledge(message)
 
-            return deserialized_messages, self.__message_size(messages)
+            return deserialized_messages, self.__message_size(messages)    
 
+        except DeadlineExceeded as e:
+            self._logger.warning(f"Pull request timed out: {e}")
+        except ServiceUnavailable as e:
+            self._logger.error(f"Pub/Sub service unavailable: {e}")
+        except InvalidArgument as e:
+            self._logger.error(f"Invalid pull request: {e}")
         except Exception as e:
-            self._logger.error(f"Error during message pull: {e}") 
-            return [], MessageStats(count=0, total_size=0)
+            self._logger.error(f"Unexpected error during message pull: {e}")
+            
+        return np.empty(0, dtype=object), MessageStats(count=0, total_size=0)
 
 
     def close(self):
@@ -159,7 +171,7 @@ class Subscriber:
         self._logger.info("Subscriber client closed.")
 
 
-    def __deserialize_protobuf(self, binary_data: bytes):
+    def _deserialize_protobuf(self, binary_data: bytes):
        
         """
         Private method to deserialize binary data into a Protobuf object.
