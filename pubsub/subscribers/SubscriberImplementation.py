@@ -8,6 +8,7 @@ from common.config import get_section
 from google.protobuf.message import Message
 from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable, InvalidArgument
 import numpy as np
+import logging
 
 
 
