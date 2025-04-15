@@ -180,11 +180,15 @@ class Subscriber:
             binary_data (bytes): The binary data to deserialize.
         Returns:
             The deserialized Protobuf object.
-        """       
-       
-        protobuf_message = self.protobuf_class()
-        protobuf_message.ParseFromString(binary_data)
-        return protobuf_message
+        """            
+        try:
+            protobuf_message = self._protobuf_class()
+            protobuf_message.ParseFromString(binary_data)
+            self._logger.debug(f"Successfully deserialized message.")
+            return protobuf_message
+        except Exception as e:
+            self._logger.error(f"Failed to deserialize protobuf message: {e}")
+            raise
     
 
     def __message_size(self, messages: Tuple):
