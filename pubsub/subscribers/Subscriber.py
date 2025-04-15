@@ -11,7 +11,6 @@ import numpy as np
 import logging
 
 
-
 pubsub_config = get_section("pubsub")
 subscriber_timeout = pubsub_config["subscriber"]["timeout"]
 
