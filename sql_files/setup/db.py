@@ -3,6 +3,7 @@ import yaml
 import os
 import logging
 from typing import List, Dict
+from mysql.connector import Error
 
 logger = logging.getLogger(__name__)
 
@@ -70,4 +71,25 @@ def fetch_sensors_from_db() -> List[Dict]:
 
     except Exception as e:
         logger.error(f"❌ Failed to fetch sensors from DB: {e}")
+        raise
+
+
+def connect_to_db():
+    """
+    Establishes a connection to the database using config.yaml.
+    
+    Returns:
+        A MySQL connection object.
+
+    Raises:
+        Error: If the connection fails.
+    """
+
+    try:
+        config = load_db_config()
+        connection = mysql.connector.connect(**config)
+        logger.info("✅ Database connection established.")
+        return connection
+    except Error as e:
+        logger.error(f"❌ Database connection failed: {e}")
         raise
