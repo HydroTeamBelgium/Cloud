@@ -1,8 +1,8 @@
-import mysql.connector
+
 import os
-from mysql.connector import Error
+
 import logging
-from db import load_sql, load_db_config
+from db import load_sql, connect_to_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,25 +16,7 @@ TABLE_ORDER = [
 ]
 
 
-def connect_to_db():
-    """
-    Establishes a connection to the database using config.yaml.
-    
-    Returns:
-        A MySQL connection object.
 
-    Raises:
-        Error: If the connection fails.
-    """
-
-    try:
-        config = load_db_config()
-        connection = mysql.connector.connect(**config)
-        logger.info("✅ Database connection established.")
-        return connection
-    except Error as e:
-        logger.error(f"❌ Database connection failed: {e}")
-        raise
 
 
 
