@@ -4,6 +4,19 @@ import pandas as pd
 import os
 
 def fetch_and_write_csv(api_url: str, filename: str, limit: int = None):
+    """
+    Fetches data from a given API URL and writes it to a CSV file.
+    Args:
+        api_url (str): The API URL to fetch data from.
+        filename (str): The name of the CSV file to write the data to.
+        limit (int, optional): The maximum number of records to write. Defaults to None.
+
+    Raises:
+        Exception: If the API request fails or if the data is empty.
+
+        
+    To be used when the API returns a flat JSON structure.
+    """
     try:
         response = requests.get(api_url)
         response.raise_for_status()
@@ -43,6 +56,24 @@ def fetch_and_write_csv_json_path(api_url: str, filename: str, json_path: list[s
         json_path (list[str]): A list of keys to navigate through the JSON response.
     Raises:
         APINotAvailableError: If the API request fails or returns an error.
+
+        To be used when the API returns a nested JSON structure.
+        The json_path should be a list of keys to navigate through the JSON response.
+        For example, if the JSON response is:
+        {
+            "MRData": {
+                "DriverTable": {
+                    "Drivers": [
+                        {"id": "hamilton", "givenName": "Lewis", "familyName": "Hamilton"},
+                        ...
+                    ]
+                }
+            }
+        }
+        The json_path would be ["MRData", "DriverTable", "Drivers"].
+        If the data at the specified path is not a list or is empty, an error is raised.
+        If the API request fails, an APINotAvailableError is raised.
+        If the CSV file is not created or is empty, a CSVNotCreatedError is raised.
     
     """
     try:
