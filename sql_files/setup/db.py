@@ -19,11 +19,16 @@ def load_sql(filename: str) -> str:
     """
     if not filename.endswith(".sql"):
         raise ValueError("Filename must end with .sql")
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(f"SQL file {filename} not found")
+
+    # Fix: build the full path first, then check
     sql_path = os.path.join(os.path.dirname(__file__), "sql", filename)
+
+    if not os.path.isfile(sql_path):
+        raise FileNotFoundError(f"SQL file not found: {sql_path}")
+
     with open(sql_path, "r") as f:
         return f.read().strip()
+
 
 
 def load_db_config() -> dict:
