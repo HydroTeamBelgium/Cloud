@@ -14,6 +14,17 @@ TABLE_NAME = "car_components"
 
 
 def load_car_components_from_csv(csv_path: str) -> List[CarComponent]:
+    """
+    Loads and validates car component data from CSV and returns a list of CarComponent objects.
+    Args:
+        csv_path (str): Path to the CSV file containing car component data.
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        Exception: If there is an error during the loading or validation process.
+    Returns:
+        List[CarComponent]: A list of validated car component objects.
+    """
+    
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"❌ CSV file not found: {csv_path}")
 
@@ -52,7 +63,17 @@ def load_car_components_from_csv(csv_path: str) -> List[CarComponent]:
 
 
 
-def insert_car_components(components: List[CarComponent]):
+def insert_car_components(components: List[CarComponent]) -> None:
+    """
+    Inserts car components into the database.
+    Args:
+        components (List[CarComponent]): List of car component objects to insert.
+    Raises:
+        Exception: If there is an error during the insertion process.
+
+    Returns:
+        None
+    """
     if not components:
         logger.info("No car components to insert.")
         return

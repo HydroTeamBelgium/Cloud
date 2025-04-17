@@ -18,6 +18,14 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
     """
     Loads event data from CSV and validates schema before parsing.
 
+    Args:
+        csv_path (str): Path to the CSV file containing event data.
+        
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        Exception: If there is an error during the loading or validation process.
+    
+
     Returns:
         List[Event]: Parsed event objects if schema is valid.
     """
@@ -64,6 +72,11 @@ def load_events_from_csv(csv_path: str) -> List[Event]:
 def insert_events(events: List[Event]):
     """
     Inserts a list of Event objects into the database.
+    Args:
+        events (List[Event]): List of Event objects to insert.
+    Raises:
+        Exception: If there is an error during the insertion process.
+
     """
     if not events:
         logger.info("No events to insert.")

@@ -19,6 +19,15 @@ TABLE_NAME = "drivers"
 def load_drivers_from_csv(csv_path: str) -> List[Driver]:
     """
     Loads and validates driver data from CSV and returns a list of Driver objects.
+
+    Args:
+        csv_path (str): Path to the CSV file containing driver data.
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        Exception: If there is an error during the loading or validation process.
+    Returns:
+        List[Driver]: A list of validated driver objects.
+        
     """
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"❌ CSV file not found: {csv_path}")

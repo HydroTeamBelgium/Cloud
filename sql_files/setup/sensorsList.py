@@ -5,6 +5,12 @@ logger = logging.getLogger(__name__)
 def create_and_seed_sensor_entity():
     """
     Creates the sensor_entity table and inserts predefined sensors into it.
+
+    Raises:
+        Exception: If there is an error during the creation or insertion process.
+    Returns:
+        None
+
     """
     try:
         with connect_to_db() as conn:

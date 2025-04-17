@@ -63,6 +63,11 @@ def insert_users(users: List[User]):
 
     Args:
         users (List[User]): List of users to insert.
+
+    Raises:
+        Exception: If there is an error during the insertion process.
+    Returns:
+        None
     """
     if not users:
         logger.info("No users to insert.")
