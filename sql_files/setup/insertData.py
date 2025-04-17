@@ -41,7 +41,7 @@ def main():
         insert_reading_endpoints(endpoints)
         
         # === Sensor Data ===
-        xbase_path = os.path.abspath(os.path.dirname(__file__))
+        base_path = os.path.abspath(os.path.dirname(__file__))
         sensor_files = [
             f for f in os.listdir(base_path)
             if f.startswith("sensor_") and f.endswith(".csv") and f != "sensor_entity.csv"
