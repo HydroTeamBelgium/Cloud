@@ -1,30 +1,80 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDEs and editors
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Logs
+*.log
+
+# Operating system files
 .DS_Store
-sql_files/.DS_Store
-sql_files/setup/car_components.csv
-sql_files/setup/drivers.csv
-sql_files/setup/events.csv
-sql_files/setup/reading_end_point.csv
-sql_files/setup/sensor_1.csv
-sql_files/setup/sensor_2.csv
-sql_files/setup/sensor_3.csv
-sql_files/setup/sensor_entity.csv
-sql_files/setup/users.csv
-sql_files/setup/__pycache__/constants.cpython-313.pyc
-sql_files/setup/__pycache__/db.cpython-313.pyc
-sql_files/setup/__pycache__/exceptions.cpython-313.pyc
-sql_files/setup/__pycache__/external_data_fetch.cpython-313.pyc
-sql_files/setup/__pycache__/fetchers.cpython-313.pyc
-sql_files/setup/__pycache__/generators.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/car_component_inserter.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/driver_inserter.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/event_inserter.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/reading_endpoint_inserter.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/sensor_data_inserter.cpython-313.pyc
-sql_files/setup/inserters/__pycache__/user_inserter.cpython-313.pyc
-sql_files/setup/models/__pycache__/carComponent.cpython-313.pyc
-sql_files/setup/models/__pycache__/driver.cpython-313.pyc
-sql_files/setup/models/__pycache__/event.cpython-313.pyc
-sql_files/setup/models/__pycache__/readingEndPoint.cpython-313.pyc
-sql_files/setup/models/__pycache__/sensorData.cpython-313.pyc
-sql_files/setup/models/__pycache__/sensorEntity.cpython-313.pyc
-sql_files/setup/models/__pycache__/user.cpython-313.pyc
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Local configuration
+.env
+*.local
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+service-account*.json
+
+# Backup files
+*.bak
+*.orig
+*.rej
+
