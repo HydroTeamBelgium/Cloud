@@ -1,5 +1,7 @@
 import logging
 import os
+from db import connect_to_db, load_sql
+from typing import List
 from inserters.user_inserter import load_users_from_csv, insert_users
 from inserters.driver_inserter import load_drivers_from_csv, insert_drivers
 from inserters.event_inserter import load_events_from_csv, insert_events
@@ -10,43 +12,66 @@ from inserters.sensor_data_inserter import insert_all_sensor_data
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+
+
+def get_existing_tables(database_name: str) -> List[str]:
+    """
+    Loads existing table names from the current database schema.
+
+    Args:
+        database_name (str): The name of the database.
+
+    Returns:
+        List[str]: A list of table names.
+    """
+    query = load_sql("get_existing_tables.sql")
+    
+    with connect_to_db() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (database_name,))
+            results = cursor.fetchall()
+            return [row[0] for row in results]
+
+
+
 def main():
     base_path = os.path.abspath(os.path.dirname(__file__))
-    
+
     try:
-        # === Users ===
-        user_csv = os.path.join(base_path, "users.csv")
-        users = load_users_from_csv(user_csv)
-        insert_users(users)
+        database_name = "hydro_db"  # ← REPLACE with your real DB name
+        tables = get_existing_tables(database_name)
 
+        if "users" in tables:
+            user_csv = os.path.join(base_path, "users.csv")
+            users = load_users_from_csv(user_csv)
+            insert_users(users)
 
-        # === Drivers ===
-        driver_csv = os.path.join(base_path, "drivers.csv")
-        drivers = load_drivers_from_csv(driver_csv)
-        insert_drivers(drivers)
+        if "drivers" in tables:
+            driver_csv = os.path.join(base_path, "drivers.csv")
+            drivers = load_drivers_from_csv(driver_csv)
+            insert_drivers(drivers)
 
-        # === Events ===
-        event_csv = os.path.join(base_path, "events.csv")
-        events = load_events_from_csv(event_csv)
-        insert_events(events)
+        if "events" in tables:
+            event_csv = os.path.join(base_path, "events.csv")
+            events = load_events_from_csv(event_csv)
+            insert_events(events)
 
-        # === Car Components ===
-        car_csv = os.path.join(base_path, "car_components.csv")
-        car_components = load_car_components_from_csv(car_csv)
-        insert_car_components(car_components)
-        
-        # === Reading Endpoints ===
-        reading_csv = os.path.join(base_path, "reading_end_point.csv")
-        endpoints = load_reading_endpoints_from_csv(reading_csv)
-        insert_reading_endpoints(endpoints)
-        
-        # === Sensor Data ===
-        base_path = os.path.abspath(os.path.dirname(__file__))
-        sensor_files = [
-            f for f in os.listdir(base_path)
-            if f.startswith("sensor_") and f.endswith(".csv") and f != "sensor_entity.csv"
-        ]
-        insert_all_sensor_data(sensor_files,base_path)
+        if "car_components" in tables:
+            car_csv = os.path.join(base_path, "car_components.csv")
+            car_components = load_car_components_from_csv(car_csv)
+            insert_car_components(car_components)
+
+        if "reading_end_point" in tables:
+            reading_csv = os.path.join(base_path, "reading_end_point.csv")
+            endpoints = load_reading_endpoints_from_csv(reading_csv)
+            insert_reading_endpoints(endpoints)
+
+        # Sensor tables (match pattern)
+        for table in tables:
+            if table.startswith("sensor_") and table != "sensor_entity":
+                sensor_csv_path = os.path.join(base_path, f"{table}.csv")
+                insert_all_sensor_data([f"{table}.csv"], base_path)
 
         logger.info("🎉 All data inserted successfully!")
 

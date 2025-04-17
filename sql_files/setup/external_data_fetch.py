@@ -2,6 +2,8 @@
 import requests
 import pandas as pd
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 def fetch_and_write_csv(api_url: str, filename: str, limit: int = None):
     """
@@ -46,51 +48,42 @@ def fetch_and_write_csv(api_url: str, filename: str, limit: int = None):
 
 from exceptions import APINotAvailableError
 
-def fetch_and_write_csv_json_path(api_url: str, filename: str, json_path: list[str]):
-    """
-    Fetches data from a given API URL, navigates to a specific JSON path,
-    and writes the data to a CSV file.
-    Args:
-        api_url (str): The API URL to fetch data from.
-        filename (str): The name of the CSV file to write the data to.
-        json_path (list[str]): A list of keys to navigate through the JSON response.
-    Raises:
-        APINotAvailableError: If the API request fails or returns an error.
 
-        To be used when the API returns a nested JSON structure.
-        The json_path should be a list of keys to navigate through the JSON response.
-        For example, if the JSON response is:
-        {
-            "MRData": {
-                "DriverTable": {
-                    "Drivers": [
-                        {"id": "hamilton", "givenName": "Lewis", "familyName": "Hamilton"},
-                        ...
-                    ]
-                }
-            }
-        }
-        The json_path would be ["MRData", "DriverTable", "Drivers"].
-        If the data at the specified path is not a list or is empty, an error is raised.
-        If the API request fails, an APINotAvailableError is raised.
-        If the CSV file is not created or is empty, a CSVNotCreatedError is raised.
-    
+def fetch_and_write_csv_json_path(url, filename, json_path):
+    """
+    Fetches JSON data from a URL, extracts the list at the given JSON path,
+    converts it to a DataFrame and returns it.
+
+    Args:
+        url (str): The API endpoint.
+        filename (str): Name of CSV file (optional).
+        json_path (list[str]): Path to the data inside the JSON.
+
+    Returns:
+        pd.DataFrame: Extracted DataFrame from API data.
     """
     try:
-        response = requests.get(api_url)
+        logger.info(f"🌐 Fetching data from: {url}")
+        response = requests.get(url)
         response.raise_for_status()
         data = response.json()
 
-        # Navigate to nested data using json_path
+        # Follow the JSON path to reach the array of records
         for key in json_path:
             data = data.get(key, {})
 
-        if not isinstance(data, list) or len(data) == 0:
-            raise APINotAvailableError("No data found at specified path")
+        if not isinstance(data, list):
+            logger.error("❌ Final data is not a list")
+            return None
 
         df = pd.DataFrame(data)
-        csv_path = os.path.join(os.path.dirname(__file__), filename)
-        df.to_csv(csv_path, index=False)
+        logger.info(f"📄 Retrieved {len(df)} rows")
+
+        return df
 
     except requests.RequestException as e:
-        raise APINotAvailableError(f"API request failed: {e}")
+        logger.error(f"❌ API request failed: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"❌ Failed to parse JSON: {e}")
+        return None

@@ -1,58 +1,70 @@
 import os
-import csv
 import logging
+import pandas as pd
 from datetime import datetime
-from db import connect_to_db, load_sql
 from typing import List
+from db import connect_to_db, load_sql
+from metadataCheck import get_table_metadata, validate_dataframe
 
 logger = logging.getLogger(__name__)
 
-def insert_all_sensor_data(sensor_files: List[str],base_path: str):
+DB_NAME = "hydro_db"  # ← replace with your actual DB name
+
+
+def insert_all_sensor_data(sensor_files: List[str], base_path: str):
     """
     Inserts data into each sensor_<id> table based on CSV files.
-    The script assumes that the CSV files are named in the format `sensor_<id>.csv`.
-    Each CSV file should contain the following columns:
-    - sensor_id
-    - value
-    - timestamp
-    - event_id
-    The script loads `insert_sensor_data.sql` template and replaces `{table_name}`.
-
+    Each CSV should contain:
+        - sensor_id
+        - value
+        - timestamp
+        - event_id
     """
-   
-
     try:
         with connect_to_db() as conn:
             with conn.cursor() as cursor:
-                template = load_sql("insert_sensor_data.sql")
+                base_sql = load_sql("insert_sensor_data.sql")
 
-                for f in sensor_files:
-                    table_name = f.replace(".csv", "")
-                    file_path = os.path.join(base_path, f)
-                    logger.info(f"Inserting data into {table_name}...")
+                for file_name in sensor_files:
+                    table_name = file_name.replace(".csv", "")
+                    file_path = os.path.join(base_path, file_name)
+                    logger.info(f"📥 Processing {file_path}...")
 
-                    with open(file_path, newline='') as csvfile:
-                        reader = csv.DictReader(csvfile)
-                        for row in reader:
-                            try:
-                                timestamp_str = row["timestamp"].strip()
-                                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                    try:
+                        df = pd.read_csv(file_path)
+                        df.columns = [col.strip().lower() for col in df.columns]
+                        df = df.replace({pd.NA: None, pd.NaT: None})
 
-                                
-                                query = template.replace("{table_name}", table_name)
-                                cursor.execute(query, (
-                                    int(row["sensor_id"]),
-                                    float(row["value"]),
-                                    timestamp,
-                                    int(row["event_id"])
-                                ))
-                                # logger.info(f"Inserting row: sensor={row['sensor_id']}, value={row['value']}, timestamp={timestamp}, event_id={row['event_id']}")
-                            except Exception as e:
-                                logger.warning(f"⚠️ Skipping row in {table_name} due to error: {e}")
-                
-                conn.commit()
-                logger.info("✅ All sensor data inserted successfully.")
+                        db_metadata = get_table_metadata(DB_NAME, table_name)
+                        validated_df = validate_dataframe(df, db_metadata, table_name)
 
+                        if validated_df is None:
+                            logger.error(f"❌ Skipping {table_name}: schema mismatch.")
+                            continue
+
+                        # Convert timestamp column
+                        validated_df["timestamp"] = pd.to_datetime(validated_df["timestamp"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
+                        insert_query = base_sql.replace("{table_name}", table_name)
+                        values = [
+                            (
+                                int(row["sensor_id"]),
+                                float(row["value"]),
+                                row["timestamp"].to_pydatetime(),
+                                int(row["event_id"])
+                            )
+                            for _, row in validated_df.iterrows()
+                            if pd.notnull(row["timestamp"]) and all(pd.notnull(row[col]) for col in ["sensor_id", "value", "event_id"])
+                        ]
+
+                        cursor.executemany(insert_query, values)
+                        logger.info(f"✅ Inserted {len(values)} rows into {table_name}")
+
+                    except Exception as e:
+                        logger.error(f"❌ Error inserting data into {table_name}: {e}")
+
+            conn.commit()
+            logger.info("🎉 All sensor data inserted successfully.")
     except Exception as e:
-        logger.error(f"❌ Failed to insert sensor data: {e}")
+        logger.error(f"❌ Sensor data insertion failed: {e}")
         raise

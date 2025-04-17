@@ -1,47 +1,60 @@
 import csv
 import os
 import logging
+import pandas as pd
+import numpy as np
 from typing import List
 from models.user import User
-from db import connect_to_db, load_sql  # assumes load_sql reads from `sql/` directory
+from db import connect_to_db, load_sql
+from metadataCheck import get_table_metadata, validate_dataframe
 
 logger = logging.getLogger(__name__)
 
+DB_NAME = "hydro_db"  
+TABLE_NAME = "users"
+
+
 def load_users_from_csv(csv_path: str) -> List[User]:
     """
-    Loads a list of User objects from a CSV file.
+    Loads and validates user data from CSV, returning a list of User objects.
 
     Args:
-        csv_path (str): Path to the users CSV file.
+        csv_path (str): Path to the users.csv file.
 
     Returns:
-        List[User]: A list of parsed User objects.
-
-    Raises:
-        Exception: If the file cannot be opened or parsing fails.
+        List[User]: Parsed and validated users ready for insertion.
     """
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"❌ CSV file not found: {csv_path}")
 
-    users = []
     try:
-        with open(csv_path, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                user = User(
-                    id=int(row["id"]),
-                    username=row["username"],
-                    email=row["email"],
-                    admin=bool(int(row["admin"])),
-                    password=row["password"],
-                    active_session=bool(int(row["activeSession"]))
-                )
-                users.append(user)
+        df = pd.read_csv(csv_path)
+        df = df.replace({np.nan: None})
+
+        db_metadata = get_table_metadata(DB_NAME, TABLE_NAME)
+        validated_df = validate_dataframe(df, db_metadata, TABLE_NAME)
+
+        if validated_df is None:
+            logger.error(f"❌ Aborting user loading due to schema mismatch.")
+            return []
+
+        users = [
+            User(
+                id=int(row["id"]),
+                username=row["username"],
+                email=row["email"],
+                admin=bool(int(row["admin"])),
+                password=row["password"],
+                active_session=bool(int(row["activeSession"]))
+            )
+            for _, row in validated_df.iterrows()
+        ]
+
+        return users
+
     except Exception as e:
         logger.error(f"❌ Failed to load users from CSV: {e}")
         raise
-
-    return users
 
 
 def insert_users(users: List[User]):
@@ -50,9 +63,6 @@ def insert_users(users: List[User]):
 
     Args:
         users (List[User]): List of users to insert.
-
-    Raises:
-        Exception: If any database operation fails.
     """
     if not users:
         logger.info("No users to insert.")

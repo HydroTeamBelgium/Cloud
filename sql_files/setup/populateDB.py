@@ -15,12 +15,6 @@ TABLE_ORDER = [
     "events"
 ]
 
-
-
-
-
-
-
 def create_tables():
     """
     Creates all tables using prewritten SQL files (including foreign keys).
