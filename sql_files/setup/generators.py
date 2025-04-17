@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from db import fetch_sensors_from_db
 from exceptions import CSVNotCreatedError
 import logging
+from dataclasses import asdict
 
 from models.user import User
 from models.carComponent import CarComponent
@@ -42,7 +43,7 @@ def generate_project_specific_csv_files(csv_dir):
                          random.choice(range(1, i)) if i > 1 and random.random() > 0.3 else None)
             for i in range(1, 11)
         ]
-        df_components = pd.DataFrame([c.to_dict() for c in components])
+        df_components = pd.DataFrame([asdict(c) for c in components])
         components_csv = os.path.join(csv_dir, "car_components.csv")
         df_components.to_csv(components_csv, index=False)
         if not os.path.exists(components_csv) or os.path.getsize(components_csv) == 0:
@@ -53,7 +54,7 @@ def generate_project_specific_csv_files(csv_dir):
             ReadingEndPoint(i, f"Endpoint {i}", f"Group {i}", random.randint(1, 10))
             for i in range(1, 6)
         ]
-        df_endpoints = pd.DataFrame([ep.to_dict() for ep in endpoints])
+        df_endpoints = pd.DataFrame([asdict(ep) for ep in endpoints])
         endpoints_csv = os.path.join(csv_dir, "reading_end_point.csv")
         df_endpoints.to_csv(endpoints_csv, index=False)
         if not os.path.exists(endpoints_csv) or os.path.getsize(endpoints_csv) == 0:

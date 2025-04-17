@@ -16,18 +16,23 @@ def load_car_components_from_csv(csv_path: str) -> List[CarComponent]:
     try:
         with open(csv_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
+            logger.info(f"CSV Headers: {reader.fieldnames}")  # <--- Add this
             for row in reader:
                 try:
                     component = CarComponent(
                         id=int(row["id"]),
-                        semantic_type=row["semanticType"],
+                        semantic_type=row["semantic_type"],  # fixed key name
                         manufacturer=row["manufacturer"] or None,
-                        serial_number=row["serialNumber"] or None,
-                        parent_component=int(float(row["parentComponent"])) if row.get("parentComponent") else None
-
+                        serial_number=row["serial_number"] or None,
+                        parent_component=int(float(row["parent_component"])) if row.get("parent_component") else None
                     )
                     components.append(component)
                 except Exception as e:
+                    logger.info(
+                        f"Inserting row: id={row['id']}, semantic_type={row.get('semanticType')}, "
+                        f"manufacturer={row.get('manufacturer')}, serial_number={row.get('serialNumber')}, "
+                        f"parent_component={row.get('parentComponent')}"
+                    )
                     logger.warning(f"⚠️ Skipping row due to error: {e}")
     except Exception as e:
         logger.error(f"❌ Failed to load car components: {e}")

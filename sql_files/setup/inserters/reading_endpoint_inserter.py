@@ -15,14 +15,16 @@ def load_reading_endpoints_from_csv(csv_path: str) -> List[ReadingEndPoint]:
     try:
         with open(csv_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
+            logger.info(f"CSV Headers: {reader.fieldnames}")  # <--- Add this
             for row in reader:
                 try:
                     endpoint = ReadingEndPoint(
                         id=int(row["id"]),
                         name=row["name"],
-                        functional_group=row["functionalGroup"],
-                        car_component=int(row["carComponent"]) if row["carComponent"] else None
+                        functional_group=row["functional_group"],
+                        car_component=int(row["car_component"]) if row.get("car_component") else None
                     )
+
                     endpoints.append(endpoint)
                 except Exception as e:
                     logger.warning(f"⚠️ Skipping row due to error: {e}")
