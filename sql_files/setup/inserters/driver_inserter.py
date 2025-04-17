@@ -55,7 +55,7 @@ def insert_drivers(drivers: List[Driver]):
             with conn.cursor() as cursor:
                 for driver in drivers:
                     try:
-                       logger.info(f"Inserting driver: {driver.id}, {driver.given_name}, {driver.code}, {driver.date_of_birth}")
+                    #    logger.info(f"Inserting driver: {driver.id}, {driver.given_name}, {driver.code}, {driver.date_of_birth}")
 
                        cursor.execute(sql_template, (
                             driver.given_name,
