@@ -8,6 +8,8 @@ from inserters.event_inserter import load_events_from_csv, insert_events
 from inserters.car_component_inserter import load_car_components_from_csv, insert_car_components
 from inserters.reading_endpoint_inserter import load_reading_endpoints_from_csv, insert_reading_endpoints
 from inserters.sensor_data_inserter import insert_all_sensor_data
+from constants import BASE_PATH
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ def get_existing_tables(database_name: str) -> List[str]:
 
 
 def main():
-    base_path = os.path.abspath(os.path.dirname(__file__))
+    base_path = BASE_PATH
 
     try:
         database_name = "hydro_db"  # ← REPLACE with your real DB name

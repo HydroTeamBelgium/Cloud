@@ -1,8 +1,7 @@
-
 import os
-
 import logging
 from db import load_sql, connect_to_db
+from constants import BASE_PATH
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ def create_sensor_tables():
     The script assumes that the CSV files are named in the format `sensor_<id>.csv`.
     
     """
-    base_path = os.path.abspath(os.path.dirname(__file__))
+    base_path = BASE_PATH
     sensor_files = [
         f for f in os.listdir(base_path)
         if f.startswith("sensor_") and f.endswith(".csv") and f != "sensor_entity.csv"
