@@ -19,15 +19,6 @@ sensors:
     table: sensor_readings_table2
     type: humidity
 
-sql:
-  instance_connection_name: project:region:instance
-  project: gcp-project-id
-  region: region
-  instance: instance
-  user: username
-  password: password
-  database: database
-
 transforms:
   validation:
     required_fields:
@@ -44,3 +35,13 @@ sinks:
     enabled: false
     bucket: bucket
     path: path
+  sql:
+    enabled: true
+    instance_connection_name: project:region:instance
+    project: gcp-project-id
+    region: region
+    instance: instance
+    user: username
+    password: password
+    database: database
+    table_prefix: sensor_data_

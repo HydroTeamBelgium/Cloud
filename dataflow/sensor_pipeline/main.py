@@ -4,7 +4,8 @@ from .pipeline import SensorDataPipeline
 from common.logger import LoggerFactory
 
 def main():
-    """Main entry point for the sensor data processing pipeline.
+    """
+    Main entry point for the sensor data processing pipeline.
     
     This function orchestrates the following steps:
     1. Initialize the pipeline environment (config, GCP auth)

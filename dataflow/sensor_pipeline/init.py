@@ -112,6 +112,9 @@ class PipelineInitializer:
         if not config.get('sensors'):
             warnings.append("No sensors configured. Pipeline may not process any data.")
         
+        if not config.get('sinks'):
+            warnings.append("No sinks configured. Pipeline output will not be stored.")
+        
         return warnings
     
     def _verify_storage_buckets(self, config: Dict[str, Any]) -> None:
@@ -138,6 +141,14 @@ class PipelineInitializer:
             if staging_location.startswith('gs://'):
                 bucket_name = staging_location.split('/')[2]
                 buckets_to_check.append(bucket_name)
+        
+        if (config.get('sinks') and 
+            config['sinks'].get('cloud_storage') and 
+            config['sinks']['cloud_storage'].get('enabled', False)):
+            
+            cs_config = config['sinks']['cloud_storage']
+            if bucket := cs_config.get('bucket'):
+                buckets_to_check.append(bucket)
         
         if not buckets_to_check:
             self._logger.warning("No GCS buckets specified in configuration")
@@ -172,10 +183,8 @@ class PipelineInitializer:
         for topic in topics:
             try:
                 if '/' in topic:
-                    # Full topic path provided
                     topic_path = topic
                 else:
-                    # Just topic name provided
                     topic_path = f"projects/{project_id}/topics/{topic}"
                 
                 subprocess.run(
@@ -187,6 +196,69 @@ class PipelineInitializer:
                 self._logger.info(f"PubSub topic {topic_path} exists and is accessible")
             except subprocess.SubprocessError:
                 self._logger.warning(f"PubSub topic {topic_path} does not exist or is not accessible")
+
+    def _verify_sql_sink(self, config: Dict[str, Any]) -> None:
+        """Verify SQL sink configuration and connectivity.
+        
+        Args:
+            config: The configuration dictionary
+        """
+        if not config.get('sinks') or not config['sinks'].get('sql'):
+            self._logger.info("SQL sink not configured")
+            return
+        
+        sql_config = config['sinks']['sql']
+        
+        if not sql_config.get('enabled', False):
+            self._logger.info("SQL sink is disabled, skipping verification")
+            return
+
+        required_fields = ['instance', 'user', 'password', 'database']
+        missing_fields = [field for field in required_fields if not sql_config.get(field)]
+        
+        if missing_fields:
+            self._logger.warning(f"SQL sink configuration missing required fields: {', '.join(missing_fields)}")
+            return
+        
+        if instance_connection_name := sql_config.get('instance_connection_name'):
+            try:
+                project_id = config['gcp']['project']
+                
+                instance_name = instance_connection_name.split(':')[-1]
+                
+                subprocess.run(
+                    ["gcloud", "sql", "instances", "describe", instance_name, "--project", project_id],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                self._logger.info(f"Cloud SQL instance {instance_name} exists and is accessible")
+                
+                result = subprocess.run(
+                    ["gcloud", "services", "list", "--project", project_id, "--filter", "name:sqladmin.googleapis.com", "--format", "json"],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                services = json.loads(result.stdout)
+                if not services:
+                    self._logger.warning("Cloud SQL Admin API is not enabled. Attempting to enable...")
+                    subprocess.run(
+                        ["gcloud", "services", "enable", "sqladmin.googleapis.com", "--project", project_id],
+                        check=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    self._logger.info("Cloud SQL Admin API successfully enabled")
+                
+            except subprocess.SubprocessError:
+                self._logger.warning(f"Cloud SQL instance verification failed. Check your SQL configuration.")
+        else:
+            self._logger.warning("SQL sink configured without instance_connection_name. Make sure the database is accessible.")
+        
+        self._logger.info("SQL sink configuration verified")
 
     def initialize_pipeline_environment(self) -> Dict[str, Any]:
         """Initialize the pipeline environment and load configuration.
@@ -210,11 +282,10 @@ class PipelineInitializer:
         warnings = self._validate_config(config)
         for warning in warnings:
             self._logger.warning(warning)
-
         
         self._verify_storage_buckets(config)
-
         self._verify_pubsub_topics(config)
+        self._verify_sql_sink(config)
         
         os.environ['DATAFLOW_PROJECT'] = config['gcp']['project'] 
         os.environ['DATAFLOW_REGION'] = config['gcp']['region']
