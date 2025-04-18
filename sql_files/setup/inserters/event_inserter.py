@@ -1,88 +1,92 @@
-import csv
 import os
-import ast
 import logging
+import pandas as pd
 from typing import List
 from datetime import datetime
 
 from models.event import Event
 from db import connect_to_db, load_sql
+from metadataCheck import get_table_metadata, validate_dataframe
 
 logger = logging.getLogger(__name__)
 
-from datetime import datetime
+DB_NAME = "hydro_db"  
+TABLE_NAME = "events"
+
 
 def load_events_from_csv(csv_path: str) -> List[Event]:
     """
-    Loads event data from CSV and returns a list of Event objects.
+    Loads event data from CSV and validates schema before parsing.
 
-    Args:
-        csv_path (str): Path to the CSV file containing event data.
     Returns:
-        List[Event]: A list of Event objects.
-    Raises:
-        FileNotFoundError: If the CSV file does not exist.
-        Exception: If there is an error reading the CSV file or parsing data.
-
+        List[Event]: Parsed event objects if schema is valid.
     """
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"❌ CSV file not found: {csv_path}")
 
-    events = []
     try:
-        with open(csv_path, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                try:
-                    raw_date = row["date"].strip()
-                    raw_time = row["time"].strip().replace("Z", "")
-                    dt = datetime.strptime(f"{raw_date} {raw_time}", "%Y-%m-%d %H:%M:%S")
+        df = pd.read_csv(csv_path)
+        df = df.replace({pd.NA: None})
 
-                    
-                    event = Event(
-                        id=int(row["round"]),
-                        name=row["raceName"],
-                        start_date=dt,
-                        end_date=dt,
-                        location=row["raceName"]
-                    )
-                    events.append(event)
+        # Validate schema
+        db_metadata = get_table_metadata(DB_NAME, TABLE_NAME)
+        validated_df = validate_dataframe(df, db_metadata, TABLE_NAME)
 
-                except Exception as e:
-                    logger.error(f"⚠️ Skipping event due to error: {e}")
+        if validated_df is None:
+            logger.error("❌ Schema mismatch — Aborting event load.")
+            return []
+
+        events = []
+        for _, row in validated_df.iterrows():
+            try:
+                raw_date = str(row["date"]).strip()
+                raw_time = str(row["time"]).strip().replace("Z", "")
+                dt = datetime.strptime(f"{raw_date} {raw_time}", "%Y-%m-%d %H:%M:%S")
+
+                event = Event(
+                    round=int(row["round"]),
+                    raceName=row["raceName"],
+                    date=datetime.strptime(row["date"], "%Y-%m-%d"),  # Only date part
+                    time=row["time"].replace("Z", "")  # Keep as string
+                )
+                events.append(event)
+
+            except Exception as e:
+                logger.warning(f"⚠️ Skipping row due to error: {e}")
+
+        return events
+
     except Exception as e:
         logger.error(f"❌ Failed to load events from CSV: {e}")
         raise
 
-    return events
-
-
 
 def insert_events(events: List[Event]):
+    """
+    Inserts a list of Event objects into the database.
+    """
     if not events:
         logger.info("No events to insert.")
         return
 
     try:
         sql_template = load_sql("insert_events.sql")
+        values = [
+            (
+                event.round,
+                event.raceName,
+                event.date,
+                event.time
+            )
+            for event in events
+        ]
 
         with connect_to_db() as conn:
             with conn.cursor() as cursor:
-                for event in events:
-                    try:
-                        #logger.info(f"Inserting event: {event.name} ({event.id})")
-                        cursor.execute(sql_template, (
-                            event.id,
-                            event.name,
-                            event.start_date,
-                            event.end_date,
-                            event.location
-                        ))
-                    except Exception as e:
-                        logger.error(f"❌ Failed to insert event ID={event.id}: {e}")
-                        raise
-                conn.commit()
-                logger.info(f"✅ Inserted {len(events)} events into database.")
+                cursor.executemany(sql_template, values)
+            conn.commit()
+            logger.info(f"✅ Inserted {len(events)} events into database.")
+
     except Exception as e:
         logger.error(f"❌ Error during event insertion: {e}")
         raise

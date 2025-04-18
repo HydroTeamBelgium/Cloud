@@ -16,15 +16,6 @@ from models.sensorData import SensorData
 logger = logging.getLogger(__name__)
 
 def generate_project_specific_csv_files(csv_dir):
-    """
-    Generates CSV files for project-specific tables using model classes.
-
-    These tables include users, car components, reading end points, and sensor entities.
-    Also generates synthetic sensor_<id>.csv files using randomized data.
-
-    Raises:
-        CSVNotCreatedError: if any expected CSV file is not created or is empty.
-    """
     try:
         logger.info("Generating users.csv")
         users = [
@@ -32,6 +23,7 @@ def generate_project_specific_csv_files(csv_dir):
             for i in range(1, 11)
         ]
         df_users = pd.DataFrame([user.to_dict() for user in users])
+        df_users = df_users[["id", "username", "email", "admin", "password", "activeSession"]]
         users_csv = os.path.join(csv_dir, "users.csv")
         df_users.to_csv(users_csv, index=False)
         if not os.path.exists(users_csv) or os.path.getsize(users_csv) == 0:
@@ -44,6 +36,7 @@ def generate_project_specific_csv_files(csv_dir):
             for i in range(1, 11)
         ]
         df_components = pd.DataFrame([asdict(c) for c in components])
+        df_components = df_components[["id", "semantic_type", "manufacturer", "serial_number", "parent_component"]]
         components_csv = os.path.join(csv_dir, "car_components.csv")
         df_components.to_csv(components_csv, index=False)
         if not os.path.exists(components_csv) or os.path.getsize(components_csv) == 0:
@@ -55,6 +48,7 @@ def generate_project_specific_csv_files(csv_dir):
             for i in range(1, 6)
         ]
         df_endpoints = pd.DataFrame([asdict(ep) for ep in endpoints])
+        df_endpoints = df_endpoints[["id", "name", "functional_group", "car_component"]]
         endpoints_csv = os.path.join(csv_dir, "reading_end_point.csv")
         df_endpoints.to_csv(endpoints_csv, index=False)
         if not os.path.exists(endpoints_csv) or os.path.getsize(endpoints_csv) == 0:
@@ -68,6 +62,7 @@ def generate_project_specific_csv_files(csv_dir):
             for i in range(1, 6)
         ]
         df_sensors = pd.DataFrame([s.to_dict() for s in sensors])
+        df_sensors = df_sensors[["id", "serialNumber", "purchaseDate", "sensorType", "readingEndPoint", "sensor_table"]]
         sensors_csv = os.path.join(csv_dir, "sensor_entity.csv")
         df_sensors.to_csv(sensors_csv, index=False)
         if not os.path.exists(sensors_csv) or os.path.getsize(sensors_csv) == 0:
@@ -81,15 +76,6 @@ def generate_project_specific_csv_files(csv_dir):
             raise CSVNotCreatedError("events.csv not found. Generate it first with generate_events_data().")
         df_events = pd.read_csv(events_csv)
 
-
-        """
-        Generates synthetic sensor data for testing purposes and saves it to CSV.
-        
-        Each sensor gets a unique CSV file with random values, timestamps, and event links.
-
-        """
-
-
         for sensor in sensors_from_db:
             sensor_data = []
             for event in df_events.to_dict(orient='records'):
@@ -101,6 +87,7 @@ def generate_project_specific_csv_files(csv_dir):
                     sensor_data.append(data.to_dict())
 
             df_sensor_data = pd.DataFrame(sensor_data)
+            df_sensor_data = df_sensor_data[["sensor_id", "value", "timestamp", "event_id"]]
             sensor_csv_path = os.path.join(csv_dir, f"{sensor['sensor_table']}.csv")
             df_sensor_data.to_csv(sensor_csv_path, index=False)
             if not os.path.exists(sensor_csv_path) or os.path.getsize(sensor_csv_path) == 0:
