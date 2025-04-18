@@ -14,6 +14,12 @@ DB_NAME = "hydro_db"  # ← replace with your actual DB name
 def insert_all_sensor_data(sensor_files: List[str], base_path: str):
     """
     Inserts data into each sensor_<id> table based on CSV files.
+    Args:
+        sensor_files (List[str]): List of CSV file names containing sensor data.
+        base_path (str): Base path where the CSV files are located.
+    Raises:
+        Exception: If there is an error during the database connection or insertion process.
+    
     Each CSV should contain:
         - sensor_id
         - value

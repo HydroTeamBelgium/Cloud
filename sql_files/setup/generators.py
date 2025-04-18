@@ -16,6 +16,22 @@ from models.sensorData import SensorData
 logger = logging.getLogger(__name__)
 
 def generate_project_specific_csv_files(csv_dir):
+    """
+    Generates project-specific CSV files for users, car components, reading endpoints, and sensor entities.
+    Args:
+        csv_dir (str): Directory where the CSV files will be saved.
+    Raises:
+        CSVNotCreatedError: If any of the CSV files are not created or are empty.
+    Returns:
+        None
+    Generates the following CSV files:
+        - users.csv
+        - car_components.csv
+        - reading_end_point.csv
+        - sensor_entity.csv
+        - sensor_<id>.csv for each sensor in the database
+        - events.csv
+    """
     try:
         logger.info("Generating users.csv")
         users = [

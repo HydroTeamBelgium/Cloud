@@ -17,6 +17,13 @@ def load_reading_endpoints_from_csv(csv_path: str) -> List[ReadingEndPoint]:
     """
     Loads and validates reading_end_point data from CSV.
 
+    Args:
+        csv_path (str): Path to the CSV file containing reading_end_point data.
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        Exception: If there is an error during the loading or validation process.
+    
+
     Returns:
         List[ReadingEndPoint]: A list of validated endpoint objects.
     """

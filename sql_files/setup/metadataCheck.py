@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 def get_table_metadata(database_name: str, table_name: str) -> List[Tuple[str, str]]:
     """
-   
-
+    Retrieves the metadata of a specified table in the database.
+    This includes the column names and their respective data types.
     Args:
         database_name (str): The name of the database.
         table_name (str): The name of the table.
