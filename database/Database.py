@@ -2,6 +2,11 @@ import mysql.connector
 from typing import List, str, Dict, Any, Optional, Tuple, Bool
 
 class Database:
+    """
+    API information on Notion:
+    https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4
+    """
+    
     def __init__(self, host: str, user: str, password: str, database: str) -> None:
         """
         Initializes the database object and creates a connection.
@@ -29,13 +34,13 @@ class Database:
         """  
         pass
         
-    def execute_query(self, query: str) -> List[Dict[str, Any]]:
+    def execute_query_path(self, query_file_path: str, params: tuple) -> List[Dict[str, Any]]:
         """
         Executes a raw SQL query on the connected database
         
         query (str): the raw SQL query. This query will be extracted from an SQL file.
                      Use of ‘typed’ queries (i.e. not extracted from an SQL file) are strongly not advised.
-        params (tuple): Prevents SQL injection (see API on Notion)
+        params (tuple): Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c)
         """
         pass
         
