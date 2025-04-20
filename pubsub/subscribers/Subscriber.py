@@ -2,9 +2,10 @@ from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
 from typing import Dict, Optional, Callable, Any
+from common.config import ConfigFactory
 from common.logger import LoggerFactory
 from typing import Tuple, Type
-from common.config import get_section
+
 from google.protobuf.message import Message
 from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable, InvalidArgument
 import numpy as np
@@ -41,7 +42,7 @@ class Subscriber:
                 If provided, this will be used for authentication (usually for local development).
                 If not provided, the client will use Application Default Credentials.
         """     
-        self._pubsub_config = get_section("pubsub")
+        self._pubsub_config = ConfigFactory().load_config() #should work, to be tested. alternative: load_config("/pubsub/config.yaml")
         self._default_timeout = self._pubsub_config["subscriber"]["timeout"]
 
         self._project_id = project_id
@@ -114,7 +115,7 @@ class Subscriber:
             self._logger.error(f"Error acknowledging message {message.message_id}: {e}")
 
 
-    def receive(self, max_messages: int = 1, timeout: float = default_timeout):
+    def receive(self, max_messages: int = 1, timeout: float = _default_timeout):
         
         """
         Receive messages from the subscription. Uses default value for max_messages and timeout.
@@ -122,7 +123,7 @@ class Subscriber:
             max_messages (int): Maximum number of messages to pull (default 1).
             timeout (float): Timeout in seconds (default 60).
         """
-        
+      
         try:
             response = self._subscriber.pull(request={
                 "subscription": self.subscription_path,
