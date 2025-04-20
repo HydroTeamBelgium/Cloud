@@ -12,15 +12,6 @@ import logging
 
 from pubsub.subscribers import MessageStats
 
-
-
-
-
-
-
-
-
-
 class Subscriber:
     """
     A class to handle subscribing to a Pub/Sub topic and processing messages.
