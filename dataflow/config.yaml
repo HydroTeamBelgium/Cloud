@@ -12,7 +12,7 @@ pubsub:
     options: ["GCP"]
   subscriber:
     timeout: 60
-    platform: "GCP"
+    platform: GCP
   topics:
     - projects/your-project-id/topics/topic1
     - projects/your-project-id/topics/topic2
