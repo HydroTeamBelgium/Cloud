@@ -6,11 +6,6 @@ gcp:
   temp_location: gs://your-bucket/temp
   runner: DataflowRunner
 
-pubsub:
-  topics:
-    - projects/your-project-id/topics/topic1
-    - projects/your-project-id/topics/topic2
-
 sensors:
   sensor1:
     table: table1
