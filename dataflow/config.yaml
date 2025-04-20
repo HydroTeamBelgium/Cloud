@@ -7,6 +7,9 @@ gcp:
   runner: DataflowRunner
 
 pubsub:
+  platforms: 
+    default: GCP
+    options: ["GCP"]
   subscriber:
     timeout: 60
     platform: "GCP"

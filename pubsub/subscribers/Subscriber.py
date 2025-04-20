@@ -1,7 +1,7 @@
 from google.cloud import pubsub_v1
 import google.auth.exceptions
 import google.api_core.exceptions
-from typing import Optional, Callable
+from typing import Dict, Optional, Callable, Any
 from common.logger import LoggerFactory
 from typing import Tuple, Type
 from common.config import get_section
@@ -10,18 +10,16 @@ from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable, Inv
 import numpy as np
 import logging
 
-
-pubsub_config = get_section("pubsub")
-subscriber_timeout = pubsub_config["subscriber"]["timeout"]
+from pubsub.subscribers import MessageStats
 
 
 
-from dataclasses import dataclass  
 
-@dataclass
-class MessageStats:
-    count: int
-    total_size: int
+
+
+
+
+
 
 class Subscriber:
     """
@@ -29,9 +27,9 @@ class Subscriber:
 
     API Details on Notion : https://www.notion.so/subscriber-API-1a0ed9807d588058a01ecb3d2fec8802?pvs=4
     """
-
-    default_timeout = subscriber_timeout
-
+    
+    _default_timeout = int
+    _pubsub_config= Dict[str,Any]
     _project_id: str
     _subscription_name: str
     _protobuf_class: Type[Message]
@@ -49,16 +47,18 @@ class Subscriber:
             protobuf_class (Type[Message]): The Protobuf message class used to deserialize incoming messages.
             platform (str): The platform to use (default is "GCP").
             service_account_path (Optional[str]): Path to a service account key file.
-            If provided, this will be used for authentication (usually for local development).
-            If not provided, the client will use Application Default Credentials.
+                If provided, this will be used for authentication (usually for local development).
+                If not provided, the client will use Application Default Credentials.
         """     
+        self._pubsub_config = get_section("pubsub")
+        self._default_timeout = self._pubsub_config["subscriber"]["timeout"]
 
         self._project_id = project_id
         self._subscription_name = subscription_name
         self._protobuf_class = protobuf_class
         self._logger = LoggerFactory().get_logger(__name__)
 
-        if platform == "GCP":
+        if platform == self._pubsub_config["platforms"]["default"]:
             self._logger.info(f"Platform {platform} selected. Using Google Cloud Platform.")
             try:
                 if service_account_path:
@@ -98,6 +98,11 @@ class Subscriber:
             streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
             self._logger.info(f"Listening for messages on {self.subscription_path}")
             streaming_pull_future.result() 
+            """
+            streaming_pull_future.result() ensures the subscriber stays active and continues listening for incoming messages.
+            when subscribe() is called, it starts a background thread but it returns immediately. 
+            '.result' is there so that the thread does not end unless there is something wrong
+            """
         except Exception as e:
             self._logger.error(f"Error during subscription: {e}") 
             raise 
