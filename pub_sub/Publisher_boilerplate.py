@@ -1,6 +1,11 @@
 class Publisher_boilerplate:
 
-    """ Pulisher class to handle sending messages to a specified topic"""
+    #TODO: fill in notion url
+    """ 
+    Pulisher class to handle sending messages to a specified topic
+    
+    API Details on Notion :
+    """
 
     def __init__(self, project_id: str) -> None:
         """Initializes a Publisher class for pub/sub with the project_id 

@@ -8,3 +8,22 @@ subscriber:
 topics:
   - projects/your-project-id/topics/topic1
   - projects/your-project-id/topics/topic2
+types_protobuf_translation:
+  8  : TYPE_BOOL
+  12 : TYPE_BYTES
+  1  : TYPE_DOUBLE
+  4  : TYPE_ENUM
+  7  : TYPE_FIXED32
+  6  : TYPE_FIXED64
+  2  : TYPE_FLOAT
+  10 : TYPE_GROUP
+  5  : TYPE_INT32
+  3  : TYPE_INT64
+  11 : TYPE_MESSAGE
+  15 : TYPE_SFIXED32 
+  16 : TYPE_SFIXED64
+  17 : TYPE_SINT32
+  18 : TYPE_SINT64
+  9  : TYPE_STRING
+  13 : TYPE_UINT32
+  4  : TYPE_UINT64
