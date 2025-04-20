@@ -10,6 +10,7 @@ from google.protobuf.message import Message
 from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable, InvalidArgument
 import numpy as np
 import logging
+from google.cloud.pubsub_v1.types import Topic
 
 from pubsub.subscribers import MessageStats
 
@@ -21,7 +22,7 @@ class Subscriber:
     """
     
     _default_timeout = int
-    _pubsub_config= Dict[str,Any]
+    _pubsub_config= Dict[Any,Any]
     _project_id: str
     _subscription_name: str
     _protobuf_class: Type[Message]
@@ -29,43 +30,63 @@ class Subscriber:
     _subscriber: pubsub_v1.SubscriberClient
     _subscription_path: str
 
-    def __init__(self, project_id: str, subscription_name: str, protobuf_class: Type[Message], platform: str = "GCP", service_account_path: Optional[str] = None):
+    def __init__(self, project_id: str, topic_name: str, protobuf_class: Type[Message], platform: str = "GCP", service_account_path: Optional[str] = None):
 
         """
         Initialize the Subscriber.
         Args:
             project_id (str): The Google Cloud project ID.
-            subscription_name (str): The name of the subscription to listen to.
+            topic_name (str): The name of the topic to listen to.
             protobuf_class (Type[Message]): The Protobuf message class used to deserialize incoming messages.
             platform (str): The platform to use (default is "GCP").
             service_account_path (Optional[str]): Path to a service account key file.
                 If provided, this will be used for authentication (usually for local development).
                 If not provided, the client will use Application Default Credentials.
         """     
-        self._pubsub_config = ConfigFactory().load_config() #should work, to be tested. alternative: load_config("/pubsub/config.yaml")
+        self._pubsub_config = ConfigFactory().load_config() 
         self._default_timeout = self._pubsub_config["subscriber"]["timeout"]
 
         self._project_id = project_id
-        self._subscription_name = subscription_name
+        self._topic_name = topic_name
         self._protobuf_class = protobuf_class
         self._logger = LoggerFactory().get_logger(__name__)
 
+        self._authenticate(platform, service_account_path)
+
+
+    def _authenticate(self, platform:str, service_account_path:str):
+        """
+        Authenticate the subscriber to the topic. Should only be called on init 
+
+        Args:
+            platform (str): The platform to use (default is "GCP").
+            service_account_path (Optional[str]): Path to a service account key file.
+                If provided, this will be used for authentication (usually for local development).
+                If not provided, the client will use Application Default Credentials.
+        """
         if platform == self._pubsub_config["platforms"]["default"]:
-            self._logger.info(f"Platform {platform} selected. Using Google Cloud Platform.")
+            self._logger.info(f"Platform {platform} selected.")
             try:
                 if service_account_path:
-                    self.subscriber = pubsub_v1.SubscriberClient.from_service_account_file(service_account_path)
+                    self._logger.info(f"Started authentication using a service account: {service_account_path}")
+                    self._subscriber = pubsub_v1.SubscriberClient.from_service_account_file(service_account_path)
                 else:
-                    self.subscriber = pubsub_v1.SubscriberClient()
+                    self._logger.info(f"Started without service account")
+                    self._subscriber = pubsub_v1.SubscriberClient()
                 
-                self.subscription_path = self.subscriber.subscription_path(project_id, subscription_name)
-            
+                self.subscription_path = self._subscriber.subscription_path(self._project_id, self._topic_name)
+            except FileNotFoundError as e:
+                self._logger.error(f"Service account file not found: {e}")
+                
+            except ValueError as e:
+                self._logger.error(f"Invalid service account file format: {e}")
+
             except google.auth.exceptions.DefaultCredentialsError as e:
                 self._logger.error("Authentication failed using Application Default Credentials." "No service account file was used.")
                 # Uses Google's Application Default Credentials automatically provided by the environment (e.g. gcloud login ) when no service account is provided.
                 raise
             except google.api_core.exceptions.NotFound as e:
-                self._logger.error(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self.subscription_name}") 
+                self._logger.error(f"Error: Project or subscription not found. Project: {self.project_id}, Subscription: {self._topic_name}") 
                 raise
             except ValueError as e:
                 self._logger.error(f"Error: Invalid project ID or subscription name. {e}") 
@@ -76,8 +97,7 @@ class Subscriber:
         else:
             self._logger.error(f"Unsupported platform: {platform}. Additional platform handling not implemented.")   
             raise NotImplementedError("Only GCP is supported currently.")
-
-
+        
     def subscribe(self, callback: Callable[[pubsub_v1.subscriber.message.Message], None]):
        
         """
@@ -87,7 +107,7 @@ class Subscriber:
         """
 
         try:
-            streaming_pull_future = self.subscriber.subscribe(self.subscription_path, callback=callback)
+            streaming_pull_future = self._subscriber.subscribe(self.subscription_path, callback=callback)
             self._logger.info(f"Listening for messages on {self.subscription_path}")
             streaming_pull_future.result() 
             """
@@ -109,7 +129,7 @@ class Subscriber:
         """
         
         try:
-            self.subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
+            self._subscriber.acknowledge(subscription=self.subscription_path, ack_ids=[message.ack_id])
             self._logger.info(f"Acknowledged message: {message.message_id}")
         except Exception as e:
             self._logger.error(f"Error acknowledging message {message.message_id}: {e}")
@@ -164,7 +184,7 @@ class Subscriber:
         Close the subscriber client and release resources.
         """        
 
-        self.subscriber.close()
+        self._subscriber.close()
         self._logger.info("Subscriber client closed.")
 
 

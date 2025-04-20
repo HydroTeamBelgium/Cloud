@@ -4,7 +4,6 @@ import logging
 import tempfile
 import unittest
 from unittest.mock import patch
-import pytest
 from io import StringIO
 
 from common.logger import LoggerFactory
