@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS {sensor_data_table} (
+CREATE TABLE IF NOT EXISTS {name_sensor_data_table} (
     id INT PRIMARY KEY,
-    value BIGINT NOT NULL, -- only works for specific types of sensors
+    value FLOAT NOT NULL, -- only works for specific types of sensors
     -- TODO create other templates for other sensors
     timestamp DATETIME(9) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     sensor_entity INT NOT NULL,

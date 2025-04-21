@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
-    admin TINYINT NOT NULL DEFAULT 0,
+    authorisation  TINYINT NOT NULL DEFAULT 0,
     password VARCHAR(255) NOT NULL,
     active_session BOOLEAN DEFAULT FALSE
     alter table your_table add constraint chk_email check (email like '%_@__%.__%')
@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
+    -- semantic parameter for us, can be 'suspension', 'tire', or whatever
     semantic_type VARCHAR(255) NOT NULL,
     manufacturer VARCHAR(255) NOT NULL,
     serial_number VARCHAR(255) NOT NULL UNIQUE,
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS events (
     end_date DATETIME NOT NULL,
     location VARCHAR(255) NOT NULL,
     track VARCHAR(255) NOT NULL,
+    -- Used to describe whether it is a static test (eg on a test bench in the workshop) or a test on track
     static BOOLEAN DEFAULT FALSE,
     driver INT NOT NULL,
     CONSTRAINT fk_event_type FOREIGN KEY (eventType)
@@ -97,8 +99,8 @@ CREATE TABLE IF NOT EXISTS sensor_entity (
 CREATE TABLE IF NOT EXISTS reading_end_point (
     id INT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    functional_group ENUM('engine', 'tire', 'exhaust', 'cockpit', 'aero') NOT NULL,
     car_component INT NOT NULL,
+    description LONGTEXT 
     CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component)
     REFERENCES car_components(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
