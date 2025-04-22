@@ -9,6 +9,7 @@ from pubsub.subscribers.Subscriber import Subscriber
 from queue import Queue
 from common.logger import LoggerFactory
 import logging
+from typing import Type
 
 class Topic:
     """
