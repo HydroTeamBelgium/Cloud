@@ -18,13 +18,15 @@ class Topic:
     API on Notion : https://www.notion.so/Topic-API-1a0ed9807d5880168436c926af242b3d?pvs=4
     """
 
-    def __init__(self, publisher: Publisher, subscriber: Subscriber, maxsize: int = 0):
+    def __init__(self, project_id: str, topic_name: str, subscription_name: str, protobuf_class: Type[Message], maxsize: int = 0):
         """
         Initializes the Topic class.
 
         Args:
-            publisher (Publisher): The publisher instance for this topic.
-            subscriber (Subscriber): The subscriber instance for this topic.
+            project_id (str): Google Cloud project ID.
+            topic_name (str): The name of the topic.
+            subscription_name (str): The name of the subscription.
+            protobuf_class (Type[Message]): The Protobuf message class used to deserialize incoming messages.
             maxsize (int): Maximum size of the internal queue (0 means infinite).
         """
         pass
