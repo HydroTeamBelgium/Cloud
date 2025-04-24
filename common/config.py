@@ -7,6 +7,7 @@ import logging
 from typing import Dict, Any, Optional
 
 from common.LoggerSingleton import SingletonMeta
+from common.ConfigWrapper import ConfigWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class ConfigFactory(metaclass=SingletonMeta):
             self._config = yaml.safe_load(f)
       
 
-    def load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
+    def load_config(self, config_path: Optional[str] = None) -> ConfigWrapper:
         """Load configuration from a YAML file.
         
         If config_path is not provided, it will attempt to determine the appropriate
@@ -29,7 +30,7 @@ class ConfigFactory(metaclass=SingletonMeta):
             config_path: Optional explicit path to the config file
             
         Returns:
-            Dictionary containing the configuration
+            ConfigWrapper instance
             
         Raises:
             FileNotFoundError: If the configuration file cannot be found
@@ -53,7 +54,7 @@ class ConfigFactory(metaclass=SingletonMeta):
             
         logger.info(f"Loading configuration from {config_path}")
         with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
+            return ConfigWrapper(config_dict=yaml.safe_load(f))
         
     def _determine_config_path(self, module_path: str) -> Optional[str]:
         """Determine the appropriate config path based on the calling module's path. The 'default filename' is defined in 'common/config.yaml'
@@ -92,21 +93,3 @@ class ConfigFactory(metaclass=SingletonMeta):
             return root_config
         
         return None
-
-    def get_section(self, section_name: str, config_path: Optional[str] = None) -> Dict[str, Any]:
-        """Load a specific section from the configuration.
-        
-        Args:
-            section_name: Name of the section to load
-            config_path: Optional explicit path to the config file
-            
-        Returns:
-            Dictionary containing the requested section
-            
-        Raises:
-            KeyError: If the requested section doesn't exist
-        """
-        config = self.load_config(config_path)
-        if section_name not in config:
-            raise KeyError(f"Section '{section_name}' not found in configuration")
-        return config[section_name]

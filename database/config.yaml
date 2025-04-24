@@ -1,0 +1,10 @@
+gcp:
+  project: your-gcp-project-id
+  region: your-region
+  job_name: your-job-name
+
+mysql:
+  instance_connection_name: your-project:your-region:your-instance
+  user: your-username
+  password: your-password
+  database: your-database
