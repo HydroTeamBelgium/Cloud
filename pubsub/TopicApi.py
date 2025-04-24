@@ -32,9 +32,11 @@ class Topic:
         """
         pass
 
+
+    #TODO: see if we actually want this. Normally every message should go through a preprocess function, even if it turns out to be the identity function
     def put(self, item: Any, block: bool = True, timeout: Optional[float] = None) -> None:
         """
-        Adds an item to the queue.
+        Adds an item to the queue without any preprocessing
 
         Args:
             item (Any): The item to be added to the queue.
