@@ -1,7 +1,7 @@
 import mysql.connector
 from typing import List, str, Dict, Any, Optional, Tuple, Bool
 import logging
-from flask import g
+from flask import g #TODO: is the flask logging feature, used below in _get_query() really needed, or can we just use our logging feature?
 
 
 from SQL_files.sql_helper_functions import read_sql_file
@@ -14,6 +14,8 @@ DEBUG = False #TODO: this debug boolean should probably be somewhere else in the
 
 class Database (metaclass=SingletonMeta):
     """
+    Represents a database object that provides methods for connecting to and interacting with a database.
+    
     API information on Notion:
     https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4
     """
@@ -25,7 +27,7 @@ class Database (metaclass=SingletonMeta):
         
         Args:
             config (ConfigWrapper): A ConfigWrapper instance, which represents a database configuration, read from a yaml file.
-                                    A configuration should first be instanciated by the ConfigFactory, after which it can be used as a ConfigWrapper instance.
+                                    A configuration should first be instantiated by the ConfigFactory, after which it can be used as a ConfigWrapper instance.
         """
         self._config = config        
     
@@ -55,45 +57,51 @@ class Database (metaclass=SingletonMeta):
             else:
                 logger.info("There's no active database connection to close.")
         except Exception as e:
-            logger.error(f"❌ Disconnection was not succesful.")
+            logger.error(f"❌ Disconnection was not successful.")
             raise
 
     
     def is_connected(self) -> bool:
         """
-        Checks wether there's a connection to the database
-        returns true if connected, else false
+        Checks whether there's a connection to the database.
+        
+        Returns:
+            bool: True if connected, False otherwise.
         """  
         pass
         
     def execute_query_path(self, query_file_path: str, **kwargs) -> List[Dict[str, Any]]:
         """
-        Executes a raw SQL query on the connected database
+        Executes a raw SQL query on the connected database.
         
-        query (str): the raw SQL query. This query will be extracted from an SQL file.
-                     Use of ‘typed’ queries (i.e. not extracted from an SQL file) are strongly not advised.
-        **kwargs: Used for dynamic replacements of SQL placeholders (aka SQL 'variables', denoted with '{}')
-                  Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c)
+        Args:
+            query_file_path (str): The file path of the SQL query to be executed.
+            **kwargs: Used for dynamic replacements of SQL placeholders (aka SQL 'variables', denoted with '{}').
+                      Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c).
+        
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the results of the query.
         """
     
     def _get_query(self, query_file_path: str, **kwargs) -> str:
         """
-        Reads an SQL query from a file and converts it to plain text (str). After completion, the method checks wether all SQL variables
+        Reads an SQL query from a file and converts it to plain text (str). After completion, the method checks whether all SQL variables
         ('{}') are replaced with parameters. 
             
         Args:
-            query_file_path (str): the file path of the SQL query to be executed (cf. query_file_path in execute_query())
-            kwargs: key word arguments to replace SQL placeholders with
+            query_file_path (str): The file path of the SQL query to be executed (cf. query_file_path in execute_query()).
+            **kwargs: Keyword arguments to replace SQL placeholders with.
                 
         Returns:
-            plain_text_query (str): string of SQL query to be executed, SQL variables ('{}') are replaced with the parameters
+            str: The string of the SQL query to be executed, with SQL variables ('{}') replaced with the parameters.
                 
         Raises:
-            QueryConstructionError: when a variables substitution is missing in the query 
+            QueryConstructionError: When a variable substitution is missing in the query.
         """
         plain_text_query = read_sql_file(query_file_path)
-        for key, value in self._sub_query_mapping.items():
-            plain_text_query = plain_text_query.replace(key,value)
+        # for key, value in self._sub_query_mapping.items():
+        #     plain_text_query = plain_text_query.replace(key,value)
+        #TODO: find out how sub-queries are used and implement the placeholder replacements when there are sub-querries
         for key, value in kwargs.items():
             plain_text_query = plain_text_query.replace(key,value)
         try:
