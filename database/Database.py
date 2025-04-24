@@ -31,7 +31,7 @@ class Database (metaclass=SingletonMeta):
     def _connect(self) -> None:
         "Establishes a connection to the database"
         try:
-            connection = mysql.connector.connect(
+            self._connection = mysql.connector.connect(
                 self._config.get_SQL_instance_connection_name(),  # Cloud SQL Instance Connection Name
                 "pymysql",
                 user=self._config.get_database_role_user_name(),
@@ -40,14 +40,23 @@ class Database (metaclass=SingletonMeta):
                 ip_type=self._IPTypes.PUBLIC  # IPTypes.PRIVATE for private IP
             )
             logger.info("✅ Database connection established.")
-            return connection
+            return self._connection
         except Exception as e:
             logger.error(f"❌ Database connection failed: {e}")
             raise
     
     def disconnect(self) -> None:
         "Disconnects the connection with the database"
-        pass
+        try:
+            if self._connection and self.connection.is_connected():
+                self._connection.close()
+                logger.info("✅ Database connection closed successfully.")
+            else:
+                logger.info("There's no active database connection to close.")
+        except Exception as e:
+            logger.error(f"❌ Disconnection was not succesful.")
+            raise
+
     
     def is_connected(self) -> bool:
         """
