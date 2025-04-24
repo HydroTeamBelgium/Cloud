@@ -1,27 +1,49 @@
 import mysql.connector
 from typing import List, str, Dict, Any, Optional, Tuple, Bool
+import logging
 
-class Database:
+
+from SQL_files.sql_helper_functions import read_sql_file
+from common.LoggerSingleton import SingletonMeta
+from common.ConfigWrapper import ConfigWrapper
+
+logger = logging.getLogger(__name__)
+
+class Database (metaclass=SingletonMeta):
     """
     API information on Notion:
     https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4
     """
     
-    def __init__(self, host: str, user: str, password: str, database: str) -> None:
+    def __init__(self, config:ConfigWrapper, database_engine:str) -> None:
         """
         Initializes the database object and creates a connection.
+        The SingletonMeta metaclass ensures there's only one instance of a Database object
         
-        host (str): Host adres of the database, found on the GCP console (go to the desired database instance)
-        user (str): the user that tries to connect to the database (in testing probably a name, 
-                    could be other instances from the car as well —> see GCP console/Database/Users)
-        password (str): user password (set in GCP, see console). Password will be hashed and hash will be used
-        database (str): the name of the MySQL database that you’re trying to connect to.
-                        See GCP console and consult your team lead for which database you should connect to
+        Args:
+            config (ConfigWrapper): A ConfigWrapper instance, which represents a database configuration, read from a yaml file.
+                                    A configuration should first be instanciated by the ConfigFactory, after which it can be used as a ConfigWrapper instance.
+            database_enginge (str): the 
         """
+        self._config = config
+        self._db_engine = database_engine        
     
     def _connect(self) -> None:
         "Establishes a connection to the database"
-        pass
+        try:
+            connection = mysql.connector.connect(
+                self._config.get_SQL_instance_connection_name(),  # Cloud SQL Instance Connection Name
+                "pymysql",
+                user=self._config.get_database_role_user_name(),
+                password=self._config.get_database_role_password(),
+                db=self._config.get_database_name(),
+                ip_type=self._IPTypes.PUBLIC  # IPTypes.PRIVATE for private IP
+            )
+            logger.info("✅ Database connection established.")
+            return connection
+        except Exception as e:
+            logger.error(f"❌ Database connection failed: {e}")
+            raise
     
     def disconnect(self) -> None:
         "Disconnects the connection with the database"
@@ -43,5 +65,3 @@ class Database:
         params (tuple): Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c)
         """
         pass
-        
-        
