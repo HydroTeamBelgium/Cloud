@@ -1,6 +1,7 @@
 
 import yaml
 from yaml.loader import SafeLoader
+from typing import Dict, Any, Optional
 
 from common.LoggerSingleton import SingletonMeta
 from database.custom_exceptions import ConfigReadError
@@ -11,15 +12,17 @@ class ConfigWrapper(metaclass=SingletonMeta):
     The ConfigWrapper class provides a wrapper for a YAML configuration file.
     """
     
-    def __init__(self,file_name: str):
-        with open(f"config/{file_name}.yaml", "r") as config:
-            try:
-                # Converts yaml document to python object
-                self._loaded_config_dictionary = yaml.load(config, Loader=SafeLoader)
-
-            except yaml.YAMLError as e:
-                raise ConfigReadError(f"Unable to load config file, error:\n"
-                                      f"{e}")
+    def __init__(self, config_dict: Optional[dict] = None, file_name: Optional[str] = None):
+        if config_dict:
+            self._loaded_config_dictionary = config_dict
+        elif file_name:
+            with open(f"config/{file_name}.yaml", "r") as config:
+                try:
+                    self._loaded_config_dictionary = yaml.load(config, Loader=SafeLoader)
+                except yaml.YAMLError as e:
+                    raise ConfigReadError(f"Unable to load config file, error:\n{e}")
+        else:
+            raise ValueError("Either config_dict or file_name must be provided")
 
     def get_project_id(self) -> str:
         return self._loaded_config_dictionary.get('project_id')
@@ -51,7 +54,7 @@ class ConfigWrapper(metaclass=SingletonMeta):
                               Nested keys can be accessed using dot notation (e.g., 'database_user.user_name').
         
         Returns:
-            The value corresponding to the provided parameter name.
+            The value or section corresponding to the provided parameter name.
         
         Raises:
             KeyError: If the parameter is not found in the config.
