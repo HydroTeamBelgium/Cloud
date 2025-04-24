@@ -82,6 +82,7 @@ class Database (metaclass=SingletonMeta):
         Returns:
             List[Dict[str, Any]]: A list of dictionaries representing the results of the query.
         """
+        
     
     def _get_query(self, query_file_path: str, **kwargs) -> str:
         """
@@ -110,6 +111,7 @@ class Database (metaclass=SingletonMeta):
         except AssertionError:
             raise QueryConstructionError(f"missed substitution in query:\n{plain_text_query}")
         if DEBUG:
+            #TODO: replace flask logging with our own
             logger.info(f"id:{g.execution_id}\n"
                         f"{query_file_path}:")
             logger.info(f"id:{g.execution_id}\n {plain_text_query}")
