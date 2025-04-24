@@ -3,3 +3,6 @@ apache-beam[gcp]
 cloud-sql-python-connector[pymysql]
 pyyaml
 pymysql
+mysql-connector
+numpy
+pandas

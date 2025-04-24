@@ -6,7 +6,7 @@ import inspect
 import logging
 from typing import Dict, Any, Optional
 
-from common.LoggerSingleton import SingletonMeta
+from common.Singleton import SingletonMeta
 from common.ConfigWrapper import ConfigWrapper
 
 logger = logging.getLogger(__name__)
