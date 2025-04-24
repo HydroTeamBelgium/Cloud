@@ -1,7 +1,0 @@
-# config.yaml
-database:
-  host: "127.0.0.1"
-  user: "root"
-  password: "Roarlol12"
-  database: "hydro_db"
-  port: 3306
