@@ -68,7 +68,7 @@ class Database (metaclass=SingletonMeta):
         Returns:
             bool: True if connected, False otherwise.
         """  
-        pass
+        return hasattr(self._connection) and self._connection.is_connected() # this is a mysql python method, it pings the underlying server to check activity
         
     def execute_query_path(self, query_file_path: str, **kwargs) -> List[Dict[str, Any]]:
         """
@@ -80,8 +80,36 @@ class Database (metaclass=SingletonMeta):
                       Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c).
         
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries representing the results of the query.
+            List[Dict[str, Any]]: A list of dictionaries representing the results of the query or a list of a Dict with key "affected rows" and value the number of affected rows
         """
+        try:
+            plain_text_query = self._get_query(query_file_path, **kwargs)
+
+            if not hasattr(self, '_connection') or not self._connection.is_connected():
+                self._connect()
+            cursor = self._connection.cursor(dictionary=True)
+            cursor.execute(plain_text_query)
+            if cursor.description:
+                results = cursor.fetchall()
+            else:
+                self._connection.commit()
+                results = [{"affected_rows": cursor.rowcount}]
+
+            if DEBUG:
+                logger.debug(f"✅ Query executed successfully: {query_file_path}")
+                logger.debug(f"🔍 Results: {results}")
+
+            cursor.close()
+            return results
+        except mysql.connector.Error as e:
+            logger.error(f"❌ MySQL error while executing query from {query_file_path}: {e}")
+            raise
+        except QueryConstructionError as e:
+            logger.error(f"❌ Query construction error: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error during query execution: {e}")
+            raise
         
     
     def _get_query(self, query_file_path: str, **kwargs) -> str:
