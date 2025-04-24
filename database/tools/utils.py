@@ -37,7 +37,7 @@ def load_sql(filename: str) -> str:
     with open(sql_path, "r") as f:
         return f.read().strip()
     
-def load_csv(filename: str, object: Callable) -> List[Model]: #type: ignore
+def load_csv(filename: str, object: Callable) -> List[object]:
     
     logger = LoggerFactory().get_logger(__name__)
     if not filename.endswith(".csv"):

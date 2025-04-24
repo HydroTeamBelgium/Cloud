@@ -4,7 +4,7 @@ from datetime import datetime
 from database.models import Model
 
 @dataclass
-class Driver(Model):
+class Driver():
     id: str
     permanent_number: int
     code: str

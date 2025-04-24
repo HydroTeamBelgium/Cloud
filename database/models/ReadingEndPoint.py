@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from database.models import Model
+
 @dataclass
-class ReadingEndPoint:
+class ReadingEndPoint():
     id: int
     name: str
     functional_group: str

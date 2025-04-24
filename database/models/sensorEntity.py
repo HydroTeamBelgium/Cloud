@@ -2,9 +2,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from database.models import Model
+
 
 @dataclass
-class SensorEntity(Model):
+class SensorEntity():
   
     id : int
     serial_number : int

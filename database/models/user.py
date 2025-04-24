@@ -5,7 +5,7 @@ from database.models import Model
 
 
 @dataclass
-class User(Model):
+class User():
     
         id: int
         username : str

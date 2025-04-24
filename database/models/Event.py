@@ -5,7 +5,7 @@ from typing import Optional
 from database.models import Model
 
 @dataclass
-class Event(Model):
+class Event():
     id: int
     name: str
     start_date: datetime

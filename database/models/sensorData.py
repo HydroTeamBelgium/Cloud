@@ -5,7 +5,7 @@ from datetime import datetime
 from database.models import Model
 
 @dataclass
-class SensorData(Model):
+class SensorData():
 
     sensor_id: int
     value : float
