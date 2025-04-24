@@ -93,21 +93,3 @@ class ConfigFactory(metaclass=SingletonMeta):
             return root_config
         
         return None
-
-    # def get_section(self, section_name: str, config_path: Optional[str] = None) -> Dict[str, Any]:
-    #     """Load a specific section from the configuration.
-        
-    #     Args:
-    #         section_name: Name of the section to load
-    #         config_path: Optional explicit path to the config file
-            
-    #     Returns:
-    #         Dictionary containing the requested section
-            
-    #     Raises:
-    #         KeyError: If the requested section doesn't exist
-    #     """
-    #     config = self.load_config(config_path)
-    #     if section_name not in config:
-    #         raise KeyError(f"Section '{section_name}' not found in configuration")
-    #     return config[section_name]

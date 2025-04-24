@@ -3,9 +3,12 @@ import yaml
 from yaml.loader import SafeLoader
 from typing import Dict, Any, Optional
 
+import logging
+
 from common.LoggerSingleton import SingletonMeta
 from database.custom_exceptions import ConfigReadError
 
+logger = logging.getLogger(__name__)
 
 class ConfigWrapper(metaclass=SingletonMeta):
     """
@@ -16,6 +19,7 @@ class ConfigWrapper(metaclass=SingletonMeta):
         if config_dict:
             self._loaded_config_dictionary = config_dict
         elif file_name:
+            logger.warning("configuration should be instantiated from ConfigFactory, not loaded directly into ConfigWrapper")
             with open(f"config/{file_name}.yaml", "r") as config:
                 try:
                     self._loaded_config_dictionary = yaml.load(config, Loader=SafeLoader)
