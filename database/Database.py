@@ -1,13 +1,16 @@
 import mysql.connector
 from typing import List, str, Dict, Any, Optional, Tuple, Bool
 import logging
+from flask import g
 
 
 from SQL_files.sql_helper_functions import read_sql_file
 from common.LoggerSingleton import SingletonMeta
 from common.ConfigWrapper import ConfigWrapper
+from custom_exceptions import QueryConstructionError
 
 logger = logging.getLogger(__name__)
+DEBUG = False #TODO: this debug boolean should probably be somewhere else in the codebase, replace it and import it in this file
 
 class Database (metaclass=SingletonMeta):
     """
@@ -15,7 +18,7 @@ class Database (metaclass=SingletonMeta):
     https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4
     """
     
-    def __init__(self, config:ConfigWrapper, database_engine:str) -> None:
+    def __init__(self, config:ConfigWrapper) -> None:
         """
         Initializes the database object and creates a connection.
         The SingletonMeta metaclass ensures there's only one instance of a Database object
@@ -23,10 +26,8 @@ class Database (metaclass=SingletonMeta):
         Args:
             config (ConfigWrapper): A ConfigWrapper instance, which represents a database configuration, read from a yaml file.
                                     A configuration should first be instanciated by the ConfigFactory, after which it can be used as a ConfigWrapper instance.
-            database_enginge (str): the 
         """
-        self._config = config
-        self._db_engine = database_engine        
+        self._config = config        
     
     def _connect(self) -> None:
         "Establishes a connection to the database"
@@ -65,12 +66,43 @@ class Database (metaclass=SingletonMeta):
         """  
         pass
         
-    def execute_query_path(self, query_file_path: str, params: tuple) -> List[Dict[str, Any]]:
+    def execute_query_path(self, query_file_path: str, **kwargs) -> List[Dict[str, Any]]:
         """
         Executes a raw SQL query on the connected database
         
         query (str): the raw SQL query. This query will be extracted from an SQL file.
                      Use of ‘typed’ queries (i.e. not extracted from an SQL file) are strongly not advised.
-        params (tuple): Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c)
+        **kwargs: Used for dynamic replacements of SQL placeholders (aka SQL 'variables', denoted with '{}')
+                  Prevents SQL injection (see API on Notion - https://www.notion.so/Database-API-1a0ed9807d5880819ea3db2ee69cb93d?pvs=4#1b9ed9807d5880a9881ff95f720e5f4c)
         """
-        pass
+    
+    def _get_query(self, query_file_path: str, **kwargs) -> str:
+        """
+        Reads an SQL query from a file and converts it to plain text (str). After completion, the method checks wether all SQL variables
+        ('{}') are replaced with parameters. 
+            
+        Args:
+            query_file_path (str): the file path of the SQL query to be executed (cf. query_file_path in execute_query())
+            kwargs: key word arguments to replace SQL placeholders with
+                
+        Returns:
+            plain_text_query (str): string of SQL query to be executed, SQL variables ('{}') are replaced with the parameters
+                
+        Raises:
+            QueryConstructionError: when a variables substitution is missing in the query 
+        """
+        plain_text_query = read_sql_file(query_file_path)
+        for key, value in self._sub_query_mapping.items():
+            plain_text_query = plain_text_query.replace(key,value)
+        for key, value in kwargs.items():
+            plain_text_query = plain_text_query.replace(key,value)
+        try:
+            assert('{' not in plain_text_query)
+            assert('}' not in plain_text_query)
+        except AssertionError:
+            raise QueryConstructionError(f"missed substitution in query:\n{plain_text_query}")
+        if DEBUG:
+            logger.info(f"id:{g.execution_id}\n"
+                        f"{query_file_path}:")
+            logger.info(f"id:{g.execution_id}\n {plain_text_query}")
+        return plain_text_query

@@ -2,7 +2,7 @@ def read_sql_file(filename:str,sub_query: bool = False) -> str:
     """
     Reads and returns the content of a SQL file as a string
 
-    @params
+    Args:
         filename : str
             The name of the SQL file to read (without the .sql extension).
         sub_query : bool, optional
@@ -10,7 +10,7 @@ def read_sql_file(filename:str,sub_query: bool = False) -> str:
             If False, the file is read from the 'sql_files/' directory.
             Default is False.
 
-    @returns:
+    Returns:
         str
             The content of the SQL file as a string.
     """
