@@ -4,8 +4,8 @@ import logging
 from flask import g #TODO: is the flask logging feature, used below in _get_query() really needed, or can we just use our logging feature?
 
 
-from SQL_files.sql_helper_functions import read_sql_file
-from common.LoggerSingleton import SingletonMeta
+from database.sql_helper_functions import read_sql_file
+from common.Singleton import SingletonMeta
 from common.ConfigWrapper import ConfigWrapper
 from custom_exceptions import QueryConstructionError
 

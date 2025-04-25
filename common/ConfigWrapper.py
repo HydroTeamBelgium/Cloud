@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional
 
 import logging
 
-from common.LoggerSingleton import SingletonMeta
+from common.Singleton import SingletonMeta
 from database.custom_exceptions import ConfigReadError
 
 logger = logging.getLogger(__name__)
