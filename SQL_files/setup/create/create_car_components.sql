@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS car_components (
     manufacturer VARCHAR(255) NOT NULL,
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     parent_component INT DEFAULT NULL,
+    car_version INT, -- FK
     CONSTRAINT fk_parent_component FOREIGN KEY (parent_component)
     REFERENCES car_components(id) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT fk_car_version FOREIGN KEY (car_version)
+    REFERENCES car_version(id) ON DELETE SET NULL ON UPDATE CASCADE
 );

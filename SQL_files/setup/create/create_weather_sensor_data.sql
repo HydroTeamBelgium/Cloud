@@ -1,5 +1,5 @@
-CREATE TABLE IF NOT EXISTS weather_sensor_data {
-    id INT PRIMARY KEY
+CREATE TABLE IF NOT EXISTS weather_sensor_data (
+    id INT PRIMARY KEY,
     precipitation_mm FLOAT, -- mm/m^2
     wind_direction_degrees FLOAT, -- 0°-360°
     wind_strength_mps FLOAT, -- mps
@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS weather_sensor_data {
     REFERENCES events(id) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_weather_sensor FOREIGN KEY (sensor_entity)
     REFERENCES sensor_entity(id) ON DELETE SET NULL ON UPDATE CASCADE
-}
+);
