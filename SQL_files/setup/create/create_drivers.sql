@@ -4,8 +4,9 @@
 CREATE TABLE IF NOT EXISTS drivers (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    dob DATE NOT NULL, -- dob = Date of birth
-    role INT NOT NULL,
-    CONSTRAINT fk_driver_role FOREIGN KEY (role),
-    REFERENCES roles(id) ON DELETE SET NULL ON UPDATE CASCADE
+    dob DATE NOT NULL,
+    role INT,
+    CONSTRAINT fk_driver_role FOREIGN KEY (role)
+        REFERENCES roles(id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 );

@@ -9,8 +9,9 @@
 CREATE TABLE IF NOT EXISTS reading_end_point (
     id INT PRIMARY KEY,
     name VARCHAR(45) NOT NULL,
-    car_component INT NOT NULL,
-    description LONGTEXT, -- semantical description (eg. 'front right brake disk')
-    CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component),
-    REFERENCES car_components(id) ON DELETE SET NULL ON UPDATE CASCADE
+    car_component INT,
+    description LONGTEXT,
+    CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component)
+        REFERENCES car_components(id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 );

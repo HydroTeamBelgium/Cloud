@@ -3,9 +3,13 @@
  * Join table for sensor_type and measurement to maintain many-to-many relationship
  */
 CREATE TABLE IF NOT EXISTS sensor_type_measurement_type (
-    sensor_type_id INT NOT NULL,
-    measurement_type_id INT NOT NULL,
+    sensor_type_id INT,
+    measurement_type_id INT,
     PRIMARY KEY (sensor_type_id, measurement_type_id),
-    FOREIGN KEY (sensor_type_id) REFERENCES sensor_type(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    FOREIGN KEY (measurement_type_id) REFERENCES measurement_type(id) ON DELETE SET NULL ON UPDATE CASCADE
+    FOREIGN KEY (sensor_type_id)
+        REFERENCES sensor_type(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (measurement_type_id)
+        REFERENCES measurement_type(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );

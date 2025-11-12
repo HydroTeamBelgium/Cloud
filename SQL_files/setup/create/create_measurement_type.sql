@@ -3,6 +3,6 @@
  */
 CREATE TABLE IF NOT EXISTS measurement_type (
     id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,      -- e.g. 'temperature', 'humidity'
-    unit VARCHAR(50) NOT NULL       -- e.g. '°C', '%' 
+    name VARCHAR(255) NOT NULL,
+    unit VARCHAR(50) NOT NULL
 );

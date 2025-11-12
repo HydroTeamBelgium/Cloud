@@ -3,14 +3,15 @@
  */
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
-    -- semantic parameter for us, can be 'suspension', 'tire', or whatever
     semantic_type VARCHAR(255) NOT NULL,
     manufacturer VARCHAR(255) NOT NULL,
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     parent_component INT DEFAULT NULL,
-    car_version INT, -- FK
+    car_version INT,
     CONSTRAINT fk_parent_component FOREIGN KEY (parent_component)
-    REFERENCES car_components(id) ON DELETE SET NULL ON UPDATE CASCADE
+        REFERENCES car_components(id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_car_version FOREIGN KEY (car_version)
-    REFERENCES car_version(id) ON DELETE SET NULL ON UPDATE CASCADE
+        REFERENCES car_version(id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 );

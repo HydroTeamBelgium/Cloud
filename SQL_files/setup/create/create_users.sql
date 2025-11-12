@@ -7,6 +7,5 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL,
     authorisation TINYINT NOT NULL DEFAULT 0,
     password VARCHAR(45) NOT NULL,
-    active_session BOOLEAN DEFAULT FALSE,
-    CONSTRAINT chk_email CHECK (email like '%_@__%.__%')
+    active_session BOOLEAN DEFAULT FALSE
 );
