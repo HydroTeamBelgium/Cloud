@@ -7,7 +7,7 @@ from unittest.mock import patch
 from io import StringIO
 
 from common.logger import LoggerFactory
-from common.LoggerSingleton import SingletonMeta
+from common.Singleton import SingletonMeta
 
 class TestLogger(unittest.TestCase):
     
