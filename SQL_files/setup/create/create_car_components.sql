@@ -3,8 +3,8 @@
  */
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
-    semantic_type VARCHAR(255) NOT NULL,
-    manufacturer VARCHAR(255) NOT NULL,
+    semantic_type INT NOT NULL,
+    manufacturer INT NOT NULL,
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     parent_component INT DEFAULT NULL,
     car_version INT,

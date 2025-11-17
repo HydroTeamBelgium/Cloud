@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS events (
     description LONGTEXT,
     track VARCHAR(45),
     static BOOLEAN DEFAULT FALSE,
-    event_condition INT,
     driver INT,
     event_type INT,
     CONSTRAINT fk_event_type FOREIGN KEY (event_type)
@@ -19,7 +18,4 @@ CREATE TABLE IF NOT EXISTS events (
     CONSTRAINT fk_event_driver FOREIGN KEY (driver)
         REFERENCES drivers(id)
         ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_event_condition FOREIGN KEY (event_condition)
-        REFERENCES event_condition(id)
-        ON DELETE SET NULL ON UPDATE CASCADE
 );

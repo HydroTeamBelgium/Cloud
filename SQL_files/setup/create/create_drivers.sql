@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS drivers (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     dob DATE NOT NULL,
+    weight INT NOT NULL,
+    length INT NOT NULL,
+    sex ENUM('M', 'F') NOT NULL,
     role INT,
     CONSTRAINT fk_driver_role FOREIGN KEY (role)
         REFERENCES roles(id)

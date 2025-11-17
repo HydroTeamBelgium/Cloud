@@ -6,23 +6,23 @@ CREATE TABLE IF NOT EXISTS roles (
 
 CREATE TABLE IF NOT EXISTS car_version (
     id INT PRIMARY KEY,
-    version VARCHAR(45)
+    version INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS event_type (
     id INT PRIMARY KEY,
-    event_type VARCHAR(255)
+    event_type INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS measurement_type (
     id INT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    unit VARCHAR(50) NOT NULL
+    name INT NOT NULL,
+    unit INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS sensor_type (
     id INT PRIMARY KEY,
-    manufacturer VARCHAR(255) NOT NULL,
+    manufacturer INT NOT NULL,
     model VARCHAR(255) NOT NULL,
     sample_freq FLOAT NOT NULL
 );
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS sensor_type (
 -- 2. car_components (depends on car_version)
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
-    semantic_type VARCHAR(255) NOT NULL,
-    manufacturer VARCHAR(255) NOT NULL,
+    semantic_type INT NOT NULL,
+    manufacturer INT NOT NULL,
     serial_number VARCHAR(255) NOT NULL UNIQUE,
     parent_component INT DEFAULT NULL,
     car_version INT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS car_components (
 -- 3. reading_end_point (depends on car_components)
 CREATE TABLE IF NOT EXISTS reading_end_point (
     id INT PRIMARY KEY,
-    name VARCHAR(45) NOT NULL,
+    name INT NOT NULL,
     car_component INT,
     description LONGTEXT,
     CONSTRAINT fk_reading_car_component FOREIGN KEY (car_component)
@@ -59,23 +59,13 @@ CREATE TABLE IF NOT EXISTS drivers (
     id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     dob DATE NOT NULL,
+    weight INT NOT NULL,
+    length INT NOT NULL,
+    sex ENUM('M', 'F') NOT NULL,
     role INT,
     CONSTRAINT fk_driver_role FOREIGN KEY (role)
         REFERENCES roles(id)
         ON DELETE SET NULL ON UPDATE CASCADE
-);
-
--- 5. event_condition
-CREATE TABLE IF NOT EXISTS event_condition (
-    id INT PRIMARY KEY,
-    precipitation_mm FLOAT,
-    wind_direction_degrees INT,
-    wind_strength_mps FLOAT,
-    surface_contamination ENUM('water0', 'water1', 'water2', 'snow', 'ice'),
-    uv_index INT,
-    temperature FLOAT,
-    CONSTRAINT chk_uv_index CHECK (uv_index >= 0 AND uv_index <= 12),
-    CONSTRAINT chk_wind_direction_degrees CHECK (wind_direction_degrees >= 0 AND wind_direction_degrees <= 359)
 );
 
 -- 6. events (depends on event_condition, drivers, event_type)
@@ -88,7 +78,6 @@ CREATE TABLE IF NOT EXISTS events (
     description LONGTEXT,
     track VARCHAR(45),
     static BOOLEAN DEFAULT FALSE,
-    event_condition INT,
     driver INT,
     event_type INT,
     CONSTRAINT fk_event_type FOREIGN KEY (event_type)
@@ -97,9 +86,6 @@ CREATE TABLE IF NOT EXISTS events (
     CONSTRAINT fk_event_driver FOREIGN KEY (driver)
         REFERENCES drivers(id)
         ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_event_condition FOREIGN KEY (event_condition)
-        REFERENCES event_condition(id)
-        ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- 7. sensor_entity (depends on sensor_type, reading_end_point)
@@ -153,6 +139,8 @@ CREATE TABLE IF NOT EXISTS sensor_data (
 CREATE TABLE IF NOT EXISTS weather_sensor_data (
     id INT PRIMARY KEY,
     precipitation_mm FLOAT,
+    precipitation_type ENUM {"fog", "rain", "hail", "snow"},
+    road_condition ENUM("water0", "water1", "water2", "snow", "ice"),
     wind_direction_degrees FLOAT,
     wind_strength_mps FLOAT,
     uv_index FLOAT,
