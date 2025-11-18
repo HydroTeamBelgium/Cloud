@@ -5,3 +5,6 @@ class APINotAvailableError(Exception):
 class CSVNotCreatedError(Exception):
     """Raised when the CSV file is not created or is empty."""
     pass
+
+class ConfigReadError(Exception):
+    pass
