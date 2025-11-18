@@ -3,13 +3,13 @@
 import os
 import yaml
 import inspect
-import logging
+from common.logger import LoggerFactory
 from typing import Dict, Any, Optional
 
 from common.Singleton import SingletonMeta
 from common.configWrapper import ConfigWrapper
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.getLogger(__name__)
 
 class ConfigFactory(metaclass=SingletonMeta):
 

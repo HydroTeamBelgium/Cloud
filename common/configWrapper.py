@@ -2,12 +2,12 @@ import yaml
 from yaml.loader import SafeLoader
 from typing import Dict, Any, Optional
 
-import logging
+from common.logger import LoggerFactory
 
 from common.Singleton import SingletonMeta
 from common.exceptions import ConfigReadError
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.getLogger(__name__)
 
 class ConfigWrapper(metaclass=SingletonMeta):
     """
