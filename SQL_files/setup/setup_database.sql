@@ -1,7 +1,7 @@
 -- 1. Base lookup tables first
 CREATE TABLE IF NOT EXISTS roles (
     id INT PRIMARY KEY,
-    role VARCHAR(100) NOT NULL
+    role INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS car_version (
