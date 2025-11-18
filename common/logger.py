@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from typing import Optional, Any, Dict, Type
-from common.LoggerSingleton import SingletonMeta
+from common.Singleton import SingletonMeta
 
 
 class LoggerFactory(metaclass=SingletonMeta):

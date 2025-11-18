@@ -1,6 +1,10 @@
 INSERT IGNORE INTO drivers (
-    given_name,
-    code,
-    date_of_birth
+    id,
+    name,
+    dob,
+    weight,
+    length,
+    sex,
+    role
 )
-VALUES (%s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s);
