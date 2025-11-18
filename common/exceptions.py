@@ -8,3 +8,6 @@ class CSVNotCreatedError(Exception):
 
 class ConfigReadError(Exception):
     pass
+
+class QueryConstructionError(Exception):
+    pass
