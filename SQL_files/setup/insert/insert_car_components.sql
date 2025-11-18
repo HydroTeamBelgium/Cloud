@@ -1,8 +1,9 @@
 INSERT IGNORE INTO car_components (
     id,
-    semanticType,
+    semantic_type,
     manufacturer,
-    serialNumber,
-    parentComponent
+    serial_number,
+    parent_component,
+    car_version
 )
-VALUES (%s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s);
