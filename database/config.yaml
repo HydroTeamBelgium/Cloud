@@ -2,16 +2,16 @@
 credentials:
   # keep format like this to connect to database
   #host (str): Host adres of the database, found on the GCP console (go to the desired database instance)
-  #user (str): the user that tries to connect to the database (in testing probably a name, 
+  #user (str): the user that tries to connect to the database (in testing probably a name,
   #   could be other instances from the car as well —> see GCP console/Database/Users)
   #password (str): user password (set in GCP, see console). Password will be hashed and hash will be used
   #database (str): the name of the MySQL database that you’re trying to connect to.
   #See GCP console and consult your team lead for which database you should connect to
-  host      : 127.0.0.1
-  user      : root
-  password  : Roarlol12
-  database  : hydro_db
-  port      : 3306
+  host: 127.0.0.1
+  user: root
+  password: Roarlol12
+  database: hydro_db
+  port: 3306
 
 csv_files:
   location: CSV_files/database
@@ -25,7 +25,7 @@ sql_files:
     events: insert_events
     drivers: insert_drivers
     components: insert_car_components
-  table_creation: #order is important ! 
+  table_creation: #order is important !
     users: create_users
     drivers: create_drivers
     components: create_car_components
@@ -35,13 +35,25 @@ sql_files:
     identifier: sensor_ #in beginning of name
     entity: sensor_entity
 
-
 fetch_data:
   drivers:
-    url       : https://ergast.com/api/f1/2023/drivers.json
-    filename  : drivers.csv
-    json_path : ["MRData", "DriverTable", "Drivers"]
+    url: https://ergast.com/api/f1/2023/drivers.json
+    filename: drivers.csv
+    json_path: ["MRData", "DriverTable", "Drivers"]
   events:
-    url       : https://ergast.com/api/f1/2023.json
-    filename  : events.csv
-    json_path : ["MRData", "RaceTable", "Races"]
+    url: https://ergast.com/api/f1/2023.json
+    filename: events.csv
+    json_path: ["MRData", "RaceTable", "Races"]
+
+#is this still necessary?
+gcp:
+  project: your-gcp-project-id
+  region: your-region
+  job_name: your-job-name
+
+#is this still necessary?
+mysql:
+  instance_connection_name: your-project:your-region:your-instance
+  user: your-username
+  password: your-password
+  database: your-database
