@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 from common.Singleton import SingletonMeta
 from common.configWrapper import ConfigWrapper
 
-logger = LoggerFactory.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 class ConfigFactory(metaclass=SingletonMeta):
 

@@ -7,7 +7,7 @@ from common.logger import LoggerFactory
 from common.Singleton import SingletonMeta
 from common.exceptions import ConfigReadError
 
-logger = LoggerFactory.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 class ConfigWrapper(metaclass=SingletonMeta):
     """
