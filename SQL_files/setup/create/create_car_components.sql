@@ -4,8 +4,8 @@
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
     semantic_type INT NOT NULL,
-    manufacturer INT NOT NULL,
-    serial_number VARCHAR(255) NOT NULL UNIQUE,
+    manufacturer INT,
+    serial_number VARCHAR(255) UNIQUE,
     parent_component INT DEFAULT NULL,
     car_version INT,
     CONSTRAINT fk_parent_component FOREIGN KEY (parent_component)

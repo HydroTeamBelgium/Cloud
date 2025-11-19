@@ -1,15 +1,15 @@
 
 from dataclasses import dataclass
-
+from typing import Optional
 from database.models import Model
 
 
 @dataclass
-class User():
+class Users():
     
         id: int
         username : str
         email :str
-        admin :str
+        authorisation: int
         password :str
-        active_session : bool
+        active_session : Optional[bool] = False

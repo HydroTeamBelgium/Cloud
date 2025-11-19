@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS sensor_type (
 CREATE TABLE IF NOT EXISTS car_components (
     id INT PRIMARY KEY,
     semantic_type INT NOT NULL,
-    manufacturer INT NOT NULL,
-    serial_number VARCHAR(255) NOT NULL UNIQUE,
+    manufacturer INT,
+    serial_number VARCHAR(255) UNIQUE,
     parent_component INT DEFAULT NULL,
     car_version INT,
     CONSTRAINT fk_parent_component FOREIGN KEY (parent_component)
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS events (
     name VARCHAR(45) NOT NULL,
     start_date DATETIME NOT NULL,
     end_date DATETIME NOT NULL,
-    location VARCHAR(45),
+    location INT NOT NULL,
     description LONGTEXT,
     track VARCHAR(45),
     static BOOLEAN DEFAULT FALSE,
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS sensor_data (
     id INT PRIMARY KEY,
     value FLOAT NOT NULL,
     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event INT NOT NULL,
+    event INT,
     sensor_entity INT,
     measurement_type INT,
     CONSTRAINT fk_measurement_type FOREIGN KEY (measurement_type)

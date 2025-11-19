@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS sensor_data (
     id INT PRIMARY KEY,
     value FLOAT NOT NULL,
     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event INT NOT NULL,
+    event INT,
     sensor_entity INT,
     measurement_type INT,
     CONSTRAINT fk_measurement_type FOREIGN KEY (measurement_type)

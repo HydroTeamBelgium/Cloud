@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS events (
     name VARCHAR(45) NOT NULL,
     start_date DATETIME NOT NULL,
     end_date DATETIME NOT NULL,
-    location VARCHAR(45),
+    location INT NOT NULL,
     description LONGTEXT,
     track VARCHAR(45),
     static BOOLEAN DEFAULT FALSE,
