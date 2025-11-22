@@ -1,5 +1,5 @@
 import mysql.connector
-from typing import List, str, Dict, Any, Optional, Tuple, Bool
+from typing import List, Dict, Any, Optional, Tuple
 
 from common.Singleton import SingletonMeta
 from common.config import ConfigFactory

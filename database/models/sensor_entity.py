@@ -1,13 +1,9 @@
-
 from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Optional
-from database.models import Model
-
 
 @dataclass
 class SensorEntity():
-  
     id : int
     serial_number : str
     purchase_date : date

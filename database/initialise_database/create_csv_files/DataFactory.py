@@ -11,276 +11,286 @@ from common.config import ConfigFactory
 from common.logger import LoggerFactory
 from common.exceptions import APINotAvailableError, CSVNotCreatedError
 from database.Database import Database
-from database.models.carComponent import CarComponent
-from database.models.readingEndPoint import ReadingEndPoint
-from database.models.sensorData import SensorData
-from database.models.sensorEntity import SensorEntity
-from database.models.user import User
+
+from database.models.car_component import CarComponent
+from database.models.car_version import CarVersion
+from database.models.reading_end_point import ReadingEndPoint
+from database.models.sensor_data import SensorData
+from database.models.sensor_entity import SensorEntity
+from database.models.sensor_type import SensorType
+from database.models.measurement_type import MeasurementType
+from database.models.sensor_type_measurement_type import SensorTypeMeasurementType
+from database.models.users import Users
+from database.models.roles import Roles
+from database.models.drivers import Driver, Sex
+from database.models.events import Event
+from database.models.event_type import EventType
+from database.models.weather_sensor_data import WeatherSensorData, precipitationType, roadCondition
+
+DRIVERS = 10
+ROLES = 3
+
+LOCATIONS = 5 # See https://www.notion.so/Table-events-location-mapping-2b0ed9807d588064b6efce3fc55a1181
+EVENTS = 10
+EVENT_CONDITIONS = 3
+EVENT_TYPES = 3 # See https://www.notion.so/Table-event_type-event_type-mapping-2aeed9807d588019bbd7d91f8607599a
+WEATHER_SENSOR_DATA_PER_EVENT = 5
+
+USERS = 10
+AUTHORISATIONS = 3
+
+CAR_VERSIONS = 2
+CAR_COMPONENTS = 10
+MANUFACTURERS = 3 # See https://www.notion.so/Table-car_components-sensor_type-manufacturer-mapping-2aeed9807d58808b9c14d54a9aaa53dd
+                  # used for both car_components and sensor_type
+
+READING_END_POINTS = 4 # See https://www.notion.so/Table-reading_end_point-name-mapping-2aeed9807d58807ba480f2b526edffb0
+SENSOR_TYPES = 4
+MEASUREMENT_TYPES = 6 # See https://www.notion.so/Table-measurement_type-name-mapping-2afed9807d588001a8eee7a5142023e9
+MEASUREMENT_TYPES_UNITS = 3 # See https://www.notion.so/Table-measurement_type-unit-mapping-2afed9807d58808e966ad06762087322
+SENSOR_ENTITIES = 6
+SENSOR_DATA_PER_EVENT = 20
 
 class DataFactory(metaclass = SingletonMeta):
 
     _logger: logging.Logger
-    _config= Dict[str, Any]
 
     def __init__(self):
-        self._logger = LoggerFactory.get_logger(__name__)
-        self._config = ConfigFactory.load_config()
-
-    def generate_driver_data(self, csv_path) -> None:
-        """
-        Fetches driver data from the Ergast API and writes to CSV file.
-        
-        Uses the `fetch_and_write_csv` function to handle the API request and CSV writing.
-
-        The CSV file is stored in the same directory as this script.
-
-        Can raise `APINotAvailableError` if the API is unreachable or returns an error.
-        Can raise `CSVNotCreatedError` if the CSV file is not created or is empty.
-
-        """
-
-        drivers_url = self._config["fetch_data"]["drivers"]["url"]
-        filename = self._config["fetch_data"]["drivers"]["filename"]
-        json_path = self._config["fetch_data"]["drivers"]["json_path"]
-
-        try:
-            
-            self._fetch_and_write_csv_json_path(drivers_url, filename, json_path=json_path)
-        except APINotAvailableError as e:
-            self._logger.error(f"❌ API not available or failed to fetch data: {e}")
-            raise
-
-        if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
-            self._logger.error(f"❌ CSV file was not created or is empty: {filename}")
-            raise CSVNotCreatedError(f"CSV not created or is empty: {filename}")
-
-        self._logger.info(f"✅ Driver data successfully written to {filename}")
-
-
-
-    def generate_events_data(self, csv_path) -> None:
-        """
-        Fetches event (race) data from the Ergast API and writes to CSV file.
-        
-        Uses the `fetch_and_write_csv_json_path` function to handle the API request and CSV writing.
-
-        The CSV file is stored in the same directory as this script.
-
-        Can raise `APINotAvailableError` if the API is unreachable or returns an error.
-        Can raise `CSVNotCreatedError` if the CSV file is not created or is empty.
-
-        """
-
-        events_url = self._config["fetch_data"]["events"]["url"]
-        filename = self._config["fetch_data"]["events"]["filename"]
-        json_path = self._config["fetch_data"]["events"]["json_path"]
-        
-        try:
-            
-            self._fetch_and_write_csv_json_path(events_url, filename, json_path=json_path)
-        except APINotAvailableError as e:
-            self._logger.error(f"❌ API not available or failed to fetch data: {e}")
-            raise
-
-        if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
-            self._logger.error(f"❌ CSV file was not created or is empty: {filename}")
-            raise CSVNotCreatedError(f"CSV not created or is empty: {filename}")
-
-        self._logger.info(f"✅ Driver data successfully written to {filename}")
+        self._logger = LoggerFactory().get_logger(__name__)
 
     
     def generate_project_specific_csv_files(self, csv_dir):
         """
         Generates CSV files for project-specific tables using model classes.
 
-        These tables include users, car components, reading end points, and sensor entities.
-        Also generates synthetic sensor_<id>.csv files using randomized data.
+        Creates: `roles.csv`, `drivers.csv`, `event_type.csv`, `events.csv`,
+        `users.csv`, `car_version.csv`, `car_components.csv`, `reading_end_point.csv`,
+        `sensor_type.csv`, `measurement_type.csv`, `sensor_type_measurement_type.csv`,
+        `sensor_entity.csv`, `weather_sensor_data.csv`, and `sensor_data.csv`.
+
+        Note: Requires `events.csv` to exist (produced by `generate_events_data`) to
+        seed timestamps and event relationships.
 
         Raises:
-            CSVNotCreatedError: if any expected CSV file is not created or is empty.
+            CSVNotCreatedError: If any expected CSV file is not created or is empty.
         """
         try:
-            logger = LoggerFactory.get_logger()
-            database = Database()
+            # database = Database()
+            self._logger.info("Generating roles.csv")
+            roles = [
+                Roles(
+                    id=i,
+                    role=i
+                )
+                for i in range(1, ROLES + 1)
+            ]
+            self._dataclass_list_to_csv(roles, os.path.join(csv_dir, "roles.csv"))
 
-            logger.info("Generating users.csv")
+            self._logger.info("Generating drivers.csv")
+            drivers = [
+                Driver(
+                    id=index,
+                    name=f"Driver {index}",
+                    dob=datetime(1990 + index, 1, 1),
+                    role=np.random.randint(1, ROLES + 1),
+                    weight=70 + index,
+                    height=170 + index,
+                    sex=np.random.choice(Sex._member_names_)
+                )
+                for index in range(1, DRIVERS + 1)
+            ]
+            self._dataclass_list_to_csv(drivers, os.path.join(csv_dir, "drivers.csv"))
+
+            self._logger.info("Generating event_type.csv")
+            event_types = [
+                EventType(
+                    id=index,
+                    event_type=index # See https://www.notion.so/Table-event_type-event_type-mapping-2aeed9807d588019bbd7d91f8607599a?source=copy_link
+                ) for index in range(1, EVENT_TYPES + 1)
+            ]
+            self._dataclass_list_to_csv(event_types, os.path.join(csv_dir, "event_type.csv"))
+
+            self._logger.info("Generating events.csv")
+            events = [
+                Event(
+                    id=index,
+                    name=f"Event {index}",
+                    start_date=datetime(2024 + index, 1, 1, 9, 0, 0),
+                    end_date=datetime(2024 + index, 1, 2, 9, 0, 0),
+                    location=np.random.randint(1, LOCATIONS + 1),
+                    description=f"Description {index}",
+                    track=f"Track {index}",
+                    static=np.random.choice([True, False]),
+                    driver=np.random.randint(1, DRIVERS + 1),
+                    event_type=np.random.randint(1, EVENT_TYPES + 1)
+                )
+                for index in range(1, EVENTS + 1)
+            ]
+            self._dataclass_list_to_csv(events, os.path.join(csv_dir, "events.csv"))
+
+            self._logger.info("Generating users.csv")
             users = [
-                User(i, f"driver{i}", f"driver{i}@example.com", 0, "hashed_pw", np.random.choice([0, 1]))
-                for i in range(1, 11)
+                Users(
+                    id=i,
+                    username=f"user{i}",
+                    email=f"user{i}@hydroteam.be",
+                    authorisation=np.random.randint(1, AUTHORISATIONS + 1),
+                    password="hashed_pw",
+                    active_session=np.random.choice([False, True])
+                )
+                for i in range(1, USERS + 1)
             ]
-            df_users = pd.DataFrame([asdict(user) for user in users])
-            users_csv = os.path.join(csv_dir, "users.csv")
-            df_users.to_csv(users_csv, index=False)
-            if not os.path.exists(users_csv) or os.path.getsize(users_csv) == 0:
-                raise CSVNotCreatedError("users.csv not created or is empty")
-
-            logger.info("Generating car_components.csv")
-            components = [
-                CarComponent(i, f"Component {i}", f"Manufacturer {i}", f"SN-{1000+i}",
-                            np.random.choice(range(1, i)) if i > 1 and np.random.random() > 0.3 else None)
-                for i in range(1, 11)
-            ]
-            df_components = pd.DataFrame([asdict(c) for c in components])
-            components_csv = os.path.join(csv_dir, "car_components.csv")
-            df_components.to_csv(components_csv, index=False)
-            if not os.path.exists(components_csv) or os.path.getsize(components_csv) == 0:
-                raise CSVNotCreatedError("car_components.csv not created or is empty")
-
-            logger.info("Generating reading_end_point.csv")
-            endpoints = [
-                ReadingEndPoint(i, f"Endpoint {i}", f"Group {i}", np.random.randint(1, 10))
-                for i in range(1, 6)
-            ]
-            df_endpoints = pd.DataFrame([asdict(ep) for ep in endpoints])
-            endpoints_csv = os.path.join(csv_dir, "reading_end_point.csv")
-            df_endpoints.to_csv(endpoints_csv, index=False)
-            if not os.path.exists(endpoints_csv) or os.path.getsize(endpoints_csv) == 0:
-                raise CSVNotCreatedError("reading_end_point.csv not created or is empty")
-
-            logger.info("Generating sensor_entity.csv")
-            sensors = [
-                SensorEntity(i, f"SNR-{2000+i}",
-                            f"{np.random.randint(2015, 2023)}-{np.random.randint(1, 12):02d}-{np.random.randint(1, 28):02d}",
-                            np.random.randint(1, 5), np.random.randint(1, 5), f"sensor_{i}")
-                for i in range(1, 6)
-            ]
-            df_sensors = pd.DataFrame([asdict(s) for s in sensors])
-            sensors_csv = os.path.join(csv_dir, "sensor_entity.csv")
-            df_sensors.to_csv(sensors_csv, index=False)
-            if not os.path.exists(sensors_csv) or os.path.getsize(sensors_csv) == 0:
-                raise CSVNotCreatedError("sensor_entity.csv not created or is empty")
-
-            logger.info("Generating sensor_<id>.csv files")
-            sensors_from_db = database.execute_query("fetch_sensors")
-
-            events_csv = os.path.join(csv_dir, "events.csv")
-            if not os.path.exists(events_csv):
-                raise CSVNotCreatedError("events.csv not found. Generate it first with generate_events_data().")
-            df_events = pd.read_csv(events_csv)
-
-
-            """
-            Generates synthetic sensor data for testing purposes and saves it to CSV.
+            self._dataclass_list_to_csv(users, os.path.join(csv_dir, "users.csv"))
             
-            Each sensor gets a unique CSV file with random values, timestamps, and event links.
+            self._logger.info("Generating car_version.csv")
+            car_versions = [
+                CarVersion(
+                    id=i,
+                    version=i
+                )
+                for i in range(1, CAR_VERSIONS + 1)
+            ]
+            self._dataclass_list_to_csv(car_versions, os.path.join(csv_dir, "car_version.csv"))
 
-            """
+            self._logger.info("Generating car_components.csv")
+            components = [
+                CarComponent(
+                    id=i,
+                    semantic_type=f"Component Type {i}",
+                    manufacturer=np.random.randint(1, MANUFACTURERS + 1),
+                    serial_number=f"SN-{1000+i}",
+                    parent_component=np.random.choice([None] + list(range(1, i))) if i > 1 else None,
+                    car_version=CAR_VERSIONS # Assign all components to the same car version for simplicity
+                )
+                for i in range(1, CAR_COMPONENTS + 1)
+            ]
+            self._dataclass_list_to_csv(components, os.path.join(csv_dir, "car_components.csv"))
+
+            self._logger.info("Generating reading_end_point.csv")
+            endpoints = [
+                ReadingEndPoint(
+                    id=i,
+                    name=np.random.randint(1, READING_END_POINTS + 1),
+                    car_component=np.random.randint(1, CAR_COMPONENTS + 1),
+                    description=f"Description for Endpoint {i}"
+                )
+                for i in range(1, READING_END_POINTS + 1)
+            ]
+            self._dataclass_list_to_csv(endpoints, os.path.join(csv_dir, "reading_end_point.csv"))
+
+            self._logger.info("Generating sensor_type.csv")
+            sensor_types = [
+                SensorType(
+                    id=i,
+                    manufacturer=np.random.randint(1, MANUFACTURERS + 1),
+                    model=f"Model {i}",
+                    sample_freq=np.random.randint(1, 10)*10,
+                )
+                for i in range(1, SENSOR_TYPES + 1)
+            ]
+            self._dataclass_list_to_csv(sensor_types, os.path.join(csv_dir, "sensor_type.csv"))
+
+            self._logger.info("Generating measurement_type.csv")
+            measurement_types = [
+                MeasurementType(
+                    id=i,
+                    name=i,
+                    unit=np.random.randint(1, MEASUREMENT_TYPES_UNITS + 1)
+                )
+                for i in range(1, MEASUREMENT_TYPES + 1)
+            ]
+            self._dataclass_list_to_csv(measurement_types, os.path.join(csv_dir, "measurement_type.csv"))
+            
+            self._logger.info("Generating sensor_type_measurement_type.csv")
+            sensor_type_measurement_types = [
+                SensorTypeMeasurementType(
+                    sensor_type_id=st_id,
+                    measurement_type_id=np.random.randint(1, MEASUREMENT_TYPES + 1)
+                )
+                for st_id in range(1, SENSOR_TYPES + 1) # make sure each sensor type has a measurement type
+            ]
+            self._dataclass_list_to_csv(sensor_type_measurement_types, os.path.join(csv_dir, "sensor_type_measurement_type.csv"))
+
+            self._logger.info("Generating sensor_entity.csv")
+            sensor_entities = [
+                SensorEntity(
+                    id=i,
+                    serial_number=f"SNR-{2000+i}",
+                    purchase_date=datetime(np.random.randint(2015, 2023), np.random.randint(1, 12), np.random.randint(1, 28)),
+                    sensor_type=np.random.randint(1, SENSOR_TYPES + 1),
+                    reading_end_point=np.random.randint(1, READING_END_POINTS + 1)
+                )
+                for i in range(1, SENSOR_ENTITIES + 1)
+            ]
+            self._dataclass_list_to_csv(sensor_entities, os.path.join(csv_dir, "sensor_entity.csv"))
+
+            self._logger.info("Generating weather_sensor_data.csv")
+            weather_sensor_data = []
+            current_id = 0
+            for event in events:
+                for _ in range(WEATHER_SENSOR_DATA_PER_EVENT):
+                    current_id += 1
+
+                    data = WeatherSensorData(
+                        id=current_id,
+                        precipitation_mm=round(np.random.uniform(0.0, 50.0), 2),
+                        precipitation_type=np.random.choice(precipitationType._member_names_),
+                        road_condition=np.random.choice(roadCondition._member_names_),
+                        wind_direction_degrees=round(np.random.uniform(0, 360), 2),
+                        wind_strength_mps=round(np.random.uniform(0.0, 20.0), 2),
+                        uv_index=round(np.random.uniform(0.0, 11.0), 2),
+                        temperature=round(np.random.uniform(15.0, 35.0), 2),
+                        timestamp=(event.start_date + timedelta(minutes=np.random.randint(1, 120))),
+                        event=event.id,
+                        sensor_entity=np.random.choice([sensor.id for sensor in sensor_entities])
+                    )
+                    weather_sensor_data.append(data)
+
+            self._dataclass_list_to_csv(weather_sensor_data, os.path.join(csv_dir, "weather_sensor_data.csv"))
 
 
-            for sensor in sensors_from_db:
-                sensor_data = []
-                for event in asdict(df_events):
-                    num_samples = np.random.randint(10, 20)
-                    for _ in range(num_samples):
-                        timestamp = datetime.strptime(event["date"], "%Y-%m-%d") + timedelta(minutes=np.random.randint(1, 120))
-                        data = SensorData(sensor["id"], round(np.random.uniform(0.5, 100.0), 2),
-                                        timestamp.strftime("%Y-%m-%d %H:%M:%S"), event["round"])
-                        sensor_data.append(asdict(data))
+            self._logger.info("Generating sensor_data.csv")
+            sensor_data = []
+            current_id = 0
+            for event in events:
+                for sensor in sensor_entities:
+                    for _ in range(SENSOR_DATA_PER_EVENT):
+                        current_id += 1
 
-                df_sensor_data = pd.DataFrame(sensor_data)
-                sensor_csv_path = os.path.join(csv_dir, f"{sensor['sensor_table']}.csv")
-                df_sensor_data.to_csv(sensor_csv_path, index=False)
-                if not os.path.exists(sensor_csv_path) or os.path.getsize(sensor_csv_path) == 0:
-                    raise CSVNotCreatedError(f"{sensor['sensor_table']}.csv not created or is empty")
-                logger.info(f"✅ {sensor['sensor_table']}.csv created with {len(sensor_data)} entries")
+                        data = SensorData(
+                            id=current_id, # or event_index * 10_000 + sensor_index * 100 + sample_index + 1,
+                            value=round(np.random.uniform(0.5, 100.0), 2),
+                            timestamp=(event.start_date + timedelta(minutes=np.random.randint(1, 120))),
+                            event=event.id,
+                            sensor_entity=sensor.id,
+                            measurement_type=[i for i in sensor_type_measurement_types if i.sensor_type_id == sensor.sensor_type][0].measurement_type_id
+                            # each sensor type has (at least one) measurement type
+                            # pick the first one
+                        )
+                        sensor_data.append(data)
 
-            logger.info("✅ All project-specific CSV files successfully created.")
+            self._dataclass_list_to_csv(sensor_data, os.path.join(csv_dir, "sensor_data.csv"))
+
+            self._logger.info(f"✅ sensor_data.csv created with {len(sensor_data)} entries")
+            self._logger.info("✅ All project-specific CSV files successfully created.")
 
         except CSVNotCreatedError as e:
-            logger.error(f"❌ Error generating project-specific CSV files: {e}")
+            self._logger.error(f"❌ Error generating project-specific CSV files: {e}")
             raise
-        
-    
-    def _fetch_and_write_csv(self, api_url: str, filename: str, limit: Optional[int] = None):
+
+    def _dataclass_list_to_csv(self, dataclass_list: list[Any], filename: str) -> None:
         """
-        Fetches data from a given API URL and writes it to a CSV file.
+        Converts a list of dataclass instances to a CSV file.
+
         Args:
-            api_url (str): The API URL to fetch data from.
+            dataclass_list (list[Any]): List of dataclass instances.
             filename (str): The name of the CSV file to write the data to.
-            limit (int, optional): The maximum number of records to write. Defaults to None.
 
         Raises:
-            Exception: If the API request fails or if the data is empty.
-
-            
-        To be used when the API returns a flat JSON structure.
+            CSVNotCreatedError: If the CSV file is not created or is empty.
         """
-
-        try:
-            response = requests.get(api_url)
-            response.raise_for_status()
-            data = response.json()
-
-            if not data:
-                self._logger.error(f"⚠️ No data received from {api_url}")
-                return
-
-            # Limit number of records (optional)
-            if limit:
-                data = data[:limit]
-
-            df = pd.DataFrame(data)
-            if df.empty:
-                self._logger.error(f"⚠️ No valid data to write for {filename} and limit = {limit}")
-                return
-            
-            config = ConfigFactory().load_config()
-            csv_dir = config["csv_files"]["location"]
-            output_path = os.path.join(csv_dir, filename)
-            df.to_csv(output_path, index=False)
-            print(f"✅ Saved {len(df)} rows to {filename}")
-
-        except Exception as e:
-            print(f"❌ Error fetching or writing {filename}: {e}")
-
-
-
-
-    def _fetch_and_write_csv_json_path(self, api_url: str, filename: str, json_path: list[str]):
-        """
-        Fetches data from a given API URL, navigates to a specific JSON path,
-        and writes the data to a CSV file.
-        Args:
-            api_url (str): The API URL to fetch data from.
-            filename (str): The name of the CSV file to write the data to.
-            json_path (list[str]): A list of keys to navigate through the JSON response.
-        Raises:
-            APINotAvailableError: If the API request fails or returns an error.
-
-            To be used when the API returns a nested JSON structure.
-            The json_path should be a list of keys to navigate through the JSON response.
-            For example, if the JSON response is:
-            {
-                "MRData": {
-                    "DriverTable": {
-                        "Drivers": [
-                            {"id": "hamilton", "givenName": "Lewis", "familyName": "Hamilton"},
-                            ...
-                        ]
-                    }
-                }
-            }
-            The json_path would be ["MRData", "DriverTable", "Drivers"].
-            If the data at the specified path is not a list or is empty, an error is raised.
-            If the API request fails, an APINotAvailableError is raised.
-            If the CSV file is not created or is empty, a CSVNotCreatedError is raised.
-        
-        """
-        try:
-            response = requests.get(api_url)
-            response.raise_for_status()
-            data = response.json()
-
-            # Navigate to nested data using json_path
-            for key in json_path:
-                data = data.get(key, {})
-
-            if not isinstance(data, list) or len(data) == 0:
-                raise APINotAvailableError("No data found at specified path")
-
-            df = pd.DataFrame(data)
-            csv_path = os.path.join(os.path.dirname(__file__), filename)
-            df.to_csv(csv_path, index=False)
-
-        except requests.RequestException as e:
-            raise APINotAvailableError(f"API request failed: {e}")
+        # when there is a column with int and None, need to use convert_dtypes()! Otherwise pandas infers the column as float
+        df = pd.DataFrame([asdict(dc) for dc in dataclass_list]).convert_dtypes()
+        df.to_csv(filename, index=False)
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+            raise CSVNotCreatedError(f"{filename} not created or is empty")

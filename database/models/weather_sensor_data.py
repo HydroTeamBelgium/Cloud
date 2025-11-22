@@ -2,13 +2,15 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 from enum import Enum
-from database.models import Model
 
 class precipitationType(Enum):
     fog = 'fog'
     rain = 'rain'
     hail = 'hail'
     snow = 'snow'
+
+    def __str__(self):
+        return self.value
 
 class roadCondition(Enum):
     water0 = 'water0'
@@ -17,10 +19,13 @@ class roadCondition(Enum):
     snow = 'snow'
     ice = 'ice'
 
+    def __str__(self):
+        return self.value
+
 @dataclass
 class WeatherSensorData():
     id: int
-    precipation_mm: Optional[float] = None
+    precipitation_mm: Optional[float] = None
     precipitation_type: Optional[precipitationType] = None
     road_condition: Optional[roadCondition] = None
     wind_direction_degrees: Optional[float] = None

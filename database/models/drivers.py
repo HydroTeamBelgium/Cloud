@@ -6,6 +6,9 @@ from typing import Optional
 class Sex(Enum):
     M = 'M'
     F = 'F'
+    
+    def __str__(self):
+        return self.value
 
 @dataclass
 class Driver():
@@ -13,7 +16,7 @@ class Driver():
     name: str
     dob: date
     weight: int
-    length: int
+    height: int
     sex: Sex
     role: Optional[int] = None
 
