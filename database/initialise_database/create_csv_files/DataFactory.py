@@ -41,6 +41,7 @@ AUTHORISATIONS = 3
 
 CAR_VERSIONS = 2
 CAR_COMPONENTS = 10
+CAR_COMPONENTS_SEMANTIC_TYPES = 5 # See https://www.notion.so/Table-car_components-semantic_type-mapping-2aeed9807d5880eaacebcc80b8c9481f?pvs=25
 MANUFACTURERS = 3 # See https://www.notion.so/Table-car_components-sensor_type-manufacturer-mapping-2aeed9807d58808b9c14d54a9aaa53dd
                   # used for both car_components and sensor_type
 
@@ -156,7 +157,7 @@ class DataFactory(metaclass = SingletonMeta):
             components = [
                 CarComponent(
                     id=i,
-                    semantic_type=f"Component Type {i}",
+                    semantic_type=np.random.randint(1, CAR_COMPONENTS_SEMANTIC_TYPES + 1),
                     manufacturer=np.random.randint(1, MANUFACTURERS + 1),
                     serial_number=f"SN-{1000+i}",
                     parent_component=np.random.choice([None] + list(range(1, i))) if i > 1 else None,
