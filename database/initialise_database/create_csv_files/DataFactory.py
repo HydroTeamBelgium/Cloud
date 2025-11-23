@@ -182,7 +182,7 @@ class DataFactory(metaclass = SingletonMeta):
                     id=i,
                     manufacturer=np.random.randint(1, MANUFACTURERS + 1),
                     model=f"Model {i}",
-                    sample_freq=np.random.randint(1, 11)*10,
+                    sample_freq=i*10,
                 )
                 for i in range(1, SENSOR_TYPES + 1)
             ]
