@@ -3,14 +3,12 @@ from datetime import datetime, timedelta
 import logging, os
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, Optional
+from typing import Any
 
-import requests
 from common.Singleton import SingletonMeta
 from common.config import ConfigFactory
 from common.logger import LoggerFactory
-from common.exceptions import APINotAvailableError, CSVNotCreatedError
-from database.Database import Database
+from common.exceptions import CSVNotCreatedError
 
 from database.models.car_component import CarComponent
 from database.models.car_version import CarVersion
@@ -55,12 +53,14 @@ SENSOR_DATA_PER_EVENT = 20
 class DataFactory(metaclass = SingletonMeta):
 
     _logger: logging.Logger
+    _csv_dir: str
 
     def __init__(self):
         self._logger = LoggerFactory().get_logger(__name__)
-
+        self._csv_dir = ConfigFactory().load_config().get_config_param("csv_files")["location"]
+        os.makedirs(self._csv_dir, exist_ok=True)
     
-    def generate_project_specific_csv_files(self, csv_dir):
+    def generate_project_specific_csv_files(self) -> None:
         """
         Generates CSV files for project-specific tables using model classes.
 
@@ -85,7 +85,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, ROLES + 1)
             ]
-            self._dataclass_list_to_csv(roles, os.path.join(csv_dir, "roles.csv"))
+            self._dataclass_list_to_csv(roles, "roles.csv")
 
             self._logger.info("Generating drivers.csv")
             drivers = [
@@ -100,7 +100,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for index in range(1, DRIVERS + 1)
             ]
-            self._dataclass_list_to_csv(drivers, os.path.join(csv_dir, "drivers.csv"))
+            self._dataclass_list_to_csv(drivers, "drivers.csv")
 
             self._logger.info("Generating event_type.csv")
             event_types = [
@@ -109,7 +109,7 @@ class DataFactory(metaclass = SingletonMeta):
                     event_type=index # See https://www.notion.so/Table-event_type-event_type-mapping-2aeed9807d588019bbd7d91f8607599a?source=copy_link
                 ) for index in range(1, EVENT_TYPES + 1)
             ]
-            self._dataclass_list_to_csv(event_types, os.path.join(csv_dir, "event_type.csv"))
+            self._dataclass_list_to_csv(event_types, "event_type.csv")
 
             self._logger.info("Generating events.csv")
             events = [
@@ -127,7 +127,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for index in range(1, EVENTS + 1)
             ]
-            self._dataclass_list_to_csv(events, os.path.join(csv_dir, "events.csv"))
+            self._dataclass_list_to_csv(events, "events.csv")
 
             self._logger.info("Generating users.csv")
             users = [
@@ -141,7 +141,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, USERS + 1)
             ]
-            self._dataclass_list_to_csv(users, os.path.join(csv_dir, "users.csv"))
+            self._dataclass_list_to_csv(users, "users.csv")
             
             self._logger.info("Generating car_version.csv")
             car_versions = [
@@ -151,7 +151,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, CAR_VERSIONS + 1)
             ]
-            self._dataclass_list_to_csv(car_versions, os.path.join(csv_dir, "car_version.csv"))
+            self._dataclass_list_to_csv(car_versions, "car_version.csv")
 
             self._logger.info("Generating car_components.csv")
             components = [
@@ -165,7 +165,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, CAR_COMPONENTS + 1)
             ]
-            self._dataclass_list_to_csv(components, os.path.join(csv_dir, "car_components.csv"))
+            self._dataclass_list_to_csv(components, "car_components.csv")
 
             self._logger.info("Generating reading_end_point.csv")
             endpoints = [
@@ -177,7 +177,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, READING_END_POINTS + 1)
             ]
-            self._dataclass_list_to_csv(endpoints, os.path.join(csv_dir, "reading_end_point.csv"))
+            self._dataclass_list_to_csv(endpoints, "reading_end_point.csv")
 
             self._logger.info("Generating sensor_type.csv")
             sensor_types = [
@@ -185,11 +185,11 @@ class DataFactory(metaclass = SingletonMeta):
                     id=i,
                     manufacturer=np.random.randint(1, MANUFACTURERS + 1),
                     model=f"Model {i}",
-                    sample_freq=np.random.randint(1, 10)*10,
+                    sample_freq=np.random.randint(1, 11)*10,
                 )
                 for i in range(1, SENSOR_TYPES + 1)
             ]
-            self._dataclass_list_to_csv(sensor_types, os.path.join(csv_dir, "sensor_type.csv"))
+            self._dataclass_list_to_csv(sensor_types, "sensor_type.csv")
 
             self._logger.info("Generating measurement_type.csv")
             measurement_types = [
@@ -200,7 +200,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, MEASUREMENT_TYPES + 1)
             ]
-            self._dataclass_list_to_csv(measurement_types, os.path.join(csv_dir, "measurement_type.csv"))
+            self._dataclass_list_to_csv(measurement_types, "measurement_type.csv")
             
             self._logger.info("Generating sensor_type_measurement_type.csv")
             sensor_type_measurement_types = [
@@ -210,7 +210,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for st_id in range(1, SENSOR_TYPES + 1) # make sure each sensor type has a measurement type
             ]
-            self._dataclass_list_to_csv(sensor_type_measurement_types, os.path.join(csv_dir, "sensor_type_measurement_type.csv"))
+            self._dataclass_list_to_csv(sensor_type_measurement_types, "sensor_type_measurement_type.csv")
 
             self._logger.info("Generating sensor_entity.csv")
             sensor_entities = [
@@ -223,7 +223,7 @@ class DataFactory(metaclass = SingletonMeta):
                 )
                 for i in range(1, SENSOR_ENTITIES + 1)
             ]
-            self._dataclass_list_to_csv(sensor_entities, os.path.join(csv_dir, "sensor_entity.csv"))
+            self._dataclass_list_to_csv(sensor_entities, "sensor_entity.csv")
 
             self._logger.info("Generating weather_sensor_data.csv")
             weather_sensor_data = []
@@ -247,7 +247,7 @@ class DataFactory(metaclass = SingletonMeta):
                     )
                     weather_sensor_data.append(data)
 
-            self._dataclass_list_to_csv(weather_sensor_data, os.path.join(csv_dir, "weather_sensor_data.csv"))
+            self._dataclass_list_to_csv(weather_sensor_data, "weather_sensor_data.csv")
 
 
             self._logger.info("Generating sensor_data.csv")
@@ -270,7 +270,7 @@ class DataFactory(metaclass = SingletonMeta):
                         )
                         sensor_data.append(data)
 
-            self._dataclass_list_to_csv(sensor_data, os.path.join(csv_dir, "sensor_data.csv"))
+            self._dataclass_list_to_csv(sensor_data, "sensor_data.csv")
 
             self._logger.info(f"✅ sensor_data.csv created with {len(sensor_data)} entries")
             self._logger.info("✅ All project-specific CSV files successfully created.")
@@ -292,6 +292,8 @@ class DataFactory(metaclass = SingletonMeta):
         """
         # when there is a column with int and None, need to use convert_dtypes()! Otherwise pandas infers the column as float
         df = pd.DataFrame([asdict(dc) for dc in dataclass_list]).convert_dtypes()
-        df.to_csv(filename, index=False)
-        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-            raise CSVNotCreatedError(f"{filename} not created or is empty")
+        
+        file_path = os.path.join(self._csv_dir, filename)
+        df.to_csv(file_path, index=False)
+        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+            raise CSVNotCreatedError(f"{file_path} not created or is empty")
