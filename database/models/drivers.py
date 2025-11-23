@@ -1,14 +1,11 @@
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
-class Sex(Enum):
+class Sex(StrEnum):
     M = 'M'
     F = 'F'
-    
-    def __str__(self):
-        return self.value
 
 @dataclass
 class Driver():

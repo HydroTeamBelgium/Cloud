@@ -1,26 +1,20 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-from enum import Enum
+from enum import StrEnum
 
-class precipitationType(Enum):
+class precipitationType(StrEnum):
     fog = 'fog'
     rain = 'rain'
     hail = 'hail'
     snow = 'snow'
 
-    def __str__(self):
-        return self.value
-
-class roadCondition(Enum):
+class roadCondition(StrEnum):
     water0 = 'water0'
     water1 = 'water1'
     water2 = 'water2'
     snow = 'snow'
     ice = 'ice'
-
-    def __str__(self):
-        return self.value
 
 @dataclass
 class WeatherSensorData():
