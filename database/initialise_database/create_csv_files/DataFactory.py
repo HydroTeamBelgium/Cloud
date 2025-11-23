@@ -69,9 +69,6 @@ class DataFactory(metaclass = SingletonMeta):
         `sensor_type.csv`, `measurement_type.csv`, `sensor_type_measurement_type.csv`,
         `sensor_entity.csv`, `weather_sensor_data.csv`, and `sensor_data.csv`.
 
-        Note: Requires `events.csv` to exist (produced by `generate_events_data`) to
-        seed timestamps and event relationships.
-
         Raises:
             CSVNotCreatedError: If any expected CSV file is not created or is empty.
         """
