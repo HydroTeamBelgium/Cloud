@@ -1,0 +1,6 @@
+
+config_locations:
+  dataflow: dataflow/
+  pubsub: pubsub/
+  database: database/
+default_filename: config.yaml

@@ -1,4 +1,8 @@
+wheel
 apache-beam[gcp]
-google-cloud-sql-connector[pymysql]
+cloud-sql-python-connector[pymysql]
 pyyaml
 pymysql
+mysql-connector
+numpy
+pandas
