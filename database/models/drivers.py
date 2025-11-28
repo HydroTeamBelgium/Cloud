@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
-class Sex(Enum):
+class Sex(StrEnum):
     M = 'M'
     F = 'F'
 
@@ -13,7 +13,7 @@ class Driver():
     name: str
     dob: date
     weight: int
-    length: int
+    height: int
     sex: Sex
     role: Optional[int] = None
 

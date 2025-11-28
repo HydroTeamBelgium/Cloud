@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-from database.models import Model
 
 @dataclass
 class SensorData():

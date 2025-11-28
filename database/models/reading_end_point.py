@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from database.models import Model
-
 @dataclass
 class ReadingEndPoint():
     id: int
