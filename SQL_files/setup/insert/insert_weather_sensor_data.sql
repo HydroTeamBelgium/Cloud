@@ -7,8 +7,8 @@ INSERT IGNORE INTO weather_sensor_data (
     wind_strength_mps,
     uv_index,
     temperature,
+    timestamp,
     event,
     sensor_entity
-
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);

@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS events (
         ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT fk_event_driver FOREIGN KEY (driver)
         REFERENCES drivers(id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
+        ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- 7. sensor_entity (depends on sensor_type, reading_end_point)
@@ -139,8 +139,8 @@ CREATE TABLE IF NOT EXISTS sensor_data (
 CREATE TABLE IF NOT EXISTS weather_sensor_data (
     id INT PRIMARY KEY,
     precipitation_mm FLOAT,
-    precipitation_type ENUM {"fog", "rain", "hail", "snow"},
-    road_condition ENUM("water0", "water1", "water2", "snow", "ice"),
+    precipitation_type ENUM ("fog", "rain", "hail", "snow"),
+    road_condition ENUM ("water0", "water1", "water2", "snow", "ice"),
     wind_direction_degrees FLOAT,
     wind_strength_mps FLOAT,
     uv_index FLOAT,

@@ -1,7 +1,7 @@
 INSERT IGNORE INTO sensor_data (
     id,
     value,
-    timestap,
+    timestamp,
     event,
     sensor_entity,
     measurement_type
