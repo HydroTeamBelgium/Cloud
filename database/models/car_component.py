@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional
-from database.models import Model
 
 @dataclass
 class CarComponent():
@@ -10,5 +9,3 @@ class CarComponent():
     serial_number: Optional[str] = None
     parent_component: Optional[int] = None
     car_version: Optional[int] = None
-
-

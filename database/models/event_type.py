@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from database.models import Model
 
 @dataclass
 class EventType():

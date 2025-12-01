@@ -1,5 +1,5 @@
 import mysql.connector
-from typing import List, str, Dict, Any, Optional, Tuple, Bool
+from typing import List, Dict, Any, Optional, Tuple
 
 from flask import g #TODO: is the flask logging feature, used below in _get_query() really needed, or can we just use our logging feature?
 
