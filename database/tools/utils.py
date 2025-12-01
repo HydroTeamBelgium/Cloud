@@ -1,83 +1,77 @@
-
 import csv
 import os
-from typing import Callable, List
+from typing import List, Optional, Type, TypeVar
+from dataclasses import fields
 from common.config import ConfigFactory
 from common.logger import LoggerFactory
-from database.models import Model
 
+logger = LoggerFactory().get_logger(__name__)
+config = ConfigFactory().load_config()
 
-def load_sql(filename: str) -> str:
+T = TypeVar('T')
+
+def load_csv(filename: str, dataclass_type: Type[T]) -> List[T]:
     """
-    Loads an SQL file from the sql directory.
+    Loads a CSV file and returns a list of dataclass instances.
+    
     Args:
-        filename (str): The name of the SQL file to load.
+        filename (str): The name of the CSV file to load.
+        dataclass_type (Type[T]): The dataclass type to instantiate from CSV rows.
+    
     Returns:
-        str: The SQL query as a string.
+        List[T]: A list of dataclass instances populated from the CSV file.
+    
     Raises:
-        FileNotFoundError: If the SQL file is not found.
+        FileNotFoundError: If the CSV file is not found.
     """
-
-    logger = LoggerFactory().get_logger(__name__)
-    if not filename.endswith(".sql"):
-        filename += ".sql"
-
-    # Fix: build the full path first, then check
-    config = ConfigFactory().load_config()
-    sql_path = os.path.join(config["sql_files"]["location"], filename)
-
-    if not os.path.isfile(sql_path):
-        for root, _, files in os.walk(config["sql_files"]["location"]):
-            if filename in files:
-                sql_path = root + "/" + filename
-                break
-    if not os.path.isfile(sql_path):
-        logger.error(f"Could not find any sql file called: {filename}")
-        
-    with open(sql_path, "r") as f:
-        return f.read().strip()
-    
-def load_csv(filename: str, object: Callable) -> List[object]:
-    
-    logger = LoggerFactory().get_logger(__name__)
     if not filename.endswith(".csv"):
         filename += ".csv"
 
-    # Fix: build the full path first, then check
-
-    config = ConfigFactory().load_config()
-    csv_path = os.path.join(config["csv_files"]["location"], filename)
+    csv_path = os.path.join(config.get_config_param("csv_files")["location"], filename)
 
     if not os.path.exists(csv_path):
         logger.error(f"❌ CSV file not found: {csv_path}")
-        return
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
     data = []
     try:
         with open(csv_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
-            logger.info(f"CSV Headers: {reader.fieldnames}")  # <--- Add this
-            for row in reader:
+
+            # Get dataclass field names and types
+            dataclass_fields = {f.name: f.type for f in fields(dataclass_type)}
+            
+            for row_num, row in enumerate(reader, start=1):
                 try:
-                    component = object(
-                        id=int(row["id"]),
-                        semantic_type=row["semantic_type"],  # fixed key name
-                        manufacturer=row["manufacturer"] or None,
-                        serial_number=row["serial_number"] or None,
-                        parent_component=int(float(row["parent_component"])) if row.get("parent_component") else None
-                    )
-                    data.append(component)
+                    # Build kwargs by matching CSV columns to dataclass fields
+                    kwargs = {}
+                    for field_name, field_type in dataclass_fields.items():
+                        value = row.get(field_name)
+                        # Handle empty values
+                        if not value or value.strip() == '':
+                            kwargs[field_name] = None
+
+                        # Type conversion based on field type
+                        elif field_type == int or field_type == Optional[int]:
+                            kwargs[field_name] = int(value)
+                        elif field_type == float or field_type == Optional[float]:
+                            kwargs[field_name] = float(value)
+                        elif field_type == bool or field_type == Optional[bool]:
+                            kwargs[field_name] = value.lower() in ('true', '1', 'yes')
+                        else:
+                            kwargs[field_name] = value
+                    
+                    instance = dataclass_type(**kwargs)
+                    data.append(instance)
+                    
                 except Exception as e:
-                    logger.info(
-                        f"Inserting row: id={row['id']}, semantic_type={row.get('semanticType')}, "
-                        f"manufacturer={row.get('manufacturer')}, serial_number={row.get('serialNumber')}, "
-                        f"parent_component={row.get('parentComponent')}"
-                    )
-                    logger.warning(f"⚠️ Skipping row due to error: {e}")
+                    logger.warning(f"⚠️ Skipping row {row_num} due to error: {e}")
+                    
     except Exception as e:
-        logger.error(f"❌ Failed to load car components: {e}")
+        logger.error(f"❌ Failed to load CSV file: {e}")
         raise
 
+    logger.info(f"✅ Successfully loaded {len(data)} records from {filename}")
     return data
 
 

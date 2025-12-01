@@ -11,39 +11,15 @@ credentials:
   user: root
   password: Roarlol12
   database: hydro_db
-  port: 3306
+  port: 3307
 
 csv_files:
-  location: CSV_files/database
+  location: CSV_files/database/
 
+# <prefix><entity>.sql
 sql_files:
-  location: sql_files/
-  insert_sripts:
-    users: insert_users
-    sensors: insert_sensor_data
-    endpoints: insert_reading_endpoint
-    events: insert_events
-    drivers: insert_drivers
-    components: insert_car_components
-  table_creation: #order is important !
-    users: create_users
-    drivers: create_drivers
-    components: create_car_components
-    endpoints: create_reading_end_point
-    events: create_events
-  sensor_data:
-    identifier: sensor_ #in beginning of name
-    entity: sensor_entity
-
-fetch_data:
-  drivers:
-    url: https://ergast.com/api/f1/2023/drivers.json
-    filename: drivers.csv
-    json_path: ["MRData", "DriverTable", "Drivers"]
-  events:
-    url: https://ergast.com/api/f1/2023.json
-    filename: events.csv
-    json_path: ["MRData", "RaceTable", "Races"]
+  location: SQL_files/setup/
+  create_tables_script: create_tables.sql
 
 #is this still necessary?
 gcp:

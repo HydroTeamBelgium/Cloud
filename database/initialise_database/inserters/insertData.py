@@ -1,44 +1,12 @@
-import logging
-import os
-from common.config import ConfigFactory
 from common.logger import LoggerFactory
-from database.inserters.InsertFactory import InsertFactory
-from database.tools.utils import get_sensor_sql_filenames
-
-
-
+from database.initialise_database.inserters.InsertFactory import InsertFactory
 
 def main():
-
-    logger = LoggerFactory.get_logger(__name__)
+    logger = LoggerFactory().get_logger(__name__)
     insert_factory = InsertFactory()
-    config = ConfigFactory.load_config()
     
     try:
-        # === Users ===
-
-        insert_factory.insert_users("users")
-
-
-        # === Drivers ===
-        insert_factory.insert_drivers( "drivers")
-
-
-        # === Events ===
-
-        insert_factory.insert_events("events")
-
-        # === Car Components ===
-        insert_factory.insert_car_components("car_components")
-        
-        # === Reading Endpoints ===
-
-        insert_factory.insert_reading_endpoints("reading_end_point")
-        
-        # === Sensor Data ===
-        sensor_files = get_sensor_sql_filenames()
-        insert_factory.insert_all_sensor_data(sensor_files)
-
+        insert_factory.insert_all_project_data()
         logger.info("🎉 All data inserted successfully!")
 
     except Exception as e:
